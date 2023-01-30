@@ -81,7 +81,6 @@ void layPath(char terrain[21][80]){
 
     // place pokemarts and pokecenters (next to the [14][north] (+- 1 if available))
     cCenter = 0;
-    printf("North: %d\n", north);
     for(i = 4; i < 15; i++) {
         for(j = 0; j < 2; j++) {
             if(isValid(i, north + 1, terrain) == 1) {
@@ -139,7 +138,7 @@ void addLongGrass(char terrain[21][80]) {
 
     randX = (rand() % 9) + 11; //11 - 19
     randY = (rand() % 35) + 35; // 35 - 69
-    for(i = 0; i < 25; i++) {
+    for(i = 0; i < 13; i++) {
         if(isValid(randX, randY, terrain)) {
             terrain[randX][randY] = ':';
         }
@@ -157,8 +156,8 @@ void addLongGrass(char terrain[21][80]) {
     }
 
     randX = (rand() % 8) + 2; // 2 - 9
-    randY = (rand() % 34) + 4; // 4 - 34
-    for(i = 0; i < 18; i++) {
+    randY = (rand() % 30) + 4; // 4 - 33
+    for(i = 0; i < 13; i++) {
         if(isValid(randX, randY, terrain)) {
             terrain[randX][randY] = ':';
         }
@@ -175,11 +174,53 @@ void addLongGrass(char terrain[21][80]) {
     }
 }
 
+void addTrees(char terrain[21][80]) {
+    int randX, randY, i;
+
+    randX = (rand() % 17) + 2; //2 - 18
+    randY = (rand() % 76) + 2; // 2 - 77
+    for(i = 0; i < 4; i++) {
+        if(isValid(randX, randY, terrain)) {
+            terrain[randX][randY] = '"';
+        }
+        if(isValid(randX + 1, randY, terrain)) {
+            terrain[randX + 1][randY] = '"';
+        }
+        if(isValid(randX - 1, randY + 1, terrain)) {
+            terrain[randX - 1][randY + 1] = '"';
+        }
+        if(isValid(randX - 1, randY - 1, terrain)) {
+            terrain[randX -1][randY - 1] = '"';
+        }
+        randY++;
+        if(i % 3 == 1) randX--;
+    }
+    randX = (rand() % 17) + 2; //2 - 18
+    randY = (rand() % 76) + 2; // 2 - 77
+    for(i = 0; i < 3; i++) {
+        if(isValid(randX, randY, terrain)) {
+            terrain[randX][randY] = '"';
+        }
+        if(isValid(randX + 1, randY, terrain)) {
+            terrain[randX + 1][randY] = '"';
+        }
+        if(isValid(randX - 1, randY + 1, terrain)) {
+            terrain[randX - 1][randY + 1] = '"';
+        }
+        if(isValid(randX - 1, randY - 1, terrain)) {
+            terrain[randX -1][randY - 1] = '"';
+        }
+        randY++;
+        if(i % 3 == 1) randX--;
+    }
+}
+
 void buildTerrain(char terrain[21][80]) {
     buildPerimeter(terrain);
     fillTerrainGrass(terrain);
     createWater(terrain);
     addLongGrass(terrain);
+    addTrees(terrain);
     layPath(terrain);
     printTerrain(terrain);
 }
