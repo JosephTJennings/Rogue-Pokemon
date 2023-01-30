@@ -32,8 +32,15 @@ void printTerrain(char terrain[21][80]) {
     }
 }
 
+int isValid(int x, int y, char terrain[21][80]) {
+    if(x >= 0 && x < 21 && y >= 0 && y < 80 && terrain[x][y] == ':') {
+        return 1;
+    } 
+    return 0;
+}
+
 void layPath(char terrain[21][80]){
-    int north, east, south, west, i, minX, minY;
+    int north, east, south, west, i, minX, minY, j, pCenter, cCenter;
 
     north = (rand() % 78) + 1; // generate between 1-79
     east = (rand() % 19) + 1; // generate between 1-19
@@ -47,14 +54,11 @@ void layPath(char terrain[21][80]){
         minY = north;
     } else minY = south;
 
-    printf("n: %d, e: %d, s: %d, w: %d\n", north, east, south, west);
-    printf("xInt %d, yInt %d\n", minX, minY);
-    printf("N/S dif %d, E/W dif %d\n", abs(north - south), abs(east - west));
     terrain[west][79] = '#';
     terrain[east][0] = '#';
     terrain[0][north] = '#';
     terrain[20][south] = '#';
-    //draw original lines // y starts at 14
+    
     for(i = 1; i < 15; i++) {
         terrain[i][north] = '#';
     }
@@ -74,13 +78,54 @@ void layPath(char terrain[21][80]){
     for(i = minX; i < abs(east - west) + minX; i++) {
         terrain[i][64] = '#';
     }
+
+    // place pokemarts and pokecenters (next to the [14][north] (+- 1 if available))
+    cCenter = 0;
+    printf("North: %d\n", north);
+    for(i = 4; i < 15; i++) {
+        for(j = 0; j < 2; j++) {
+            if(isValid(i, north + 1, terrain) == 1) {
+                if(cCenter == 1) {
+                    terrain[i][north + 1] = 'P';
+                    pCenter = 1;
+                    break;
+                }
+                terrain[i][north + 1] = 'C';
+                cCenter = 1;
+                break;
+            }
+            if(isValid(i, north - 1, terrain) == 1) {
+                if(cCenter == 1) {
+                    terrain[i][north - 1] = 'P';
+                    pCenter = 1;
+                    break;
+                }
+                terrain[i][north - 1] = 'C';
+                cCenter = 1;
+                break;
+            }
+        }
+        if(cCenter == 1 && pCenter == 1) break;
+    }
+    
+}
+
+void createWater(char terrain[21][80]) {
+    int randX, randY, i, tmp;
+
+    randX = (rand() % 19) + 1;
+    randY = (rand() % 78) + 1;
+
+    for(i = 0; i < 7; i++) {
+        break;
+    }
 }
 
 void buildTerrain(char terrain[21][80]) {
     buildPerimeter(terrain);
     fillTerrainGrass(terrain);
+    createWater(terrain);
     layPath(terrain);
-
     printTerrain(terrain);
 }
 int main(int argsc, char* argsv[]) {
