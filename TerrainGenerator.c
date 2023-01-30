@@ -113,13 +113,34 @@ void layPath(char terrain[21][80]){
 void createWater(char terrain[21][80]) {
     int randX, randY, i, tmp;
 
-    randX = (rand() % 19) + 1;
-    randY = (rand() % 78) + 1;
+    randX = (rand() % 15) + 1;
+    randY = (rand() % 65) + 1;
 
-    for(i = 0; i < 7; i++) {
-        break;
+    for(i = 0; i < 8; i++) {
+        if(isValid(randX, randY, terrain)) {
+            terrain[randX][randY] = '~';
+        }
+        if(isValid(randX + 1, randY, terrain)) {
+            terrain[randX + 1][randY] = '~';
+            randX++;
+        }
+        if(isValid(randX, randY + 1, terrain)) {
+            terrain[randX][randY + 1] = '~';
+            randY++;
+            continue;
+        }
+        if(isValid(randX, randY - 1, terrain)) {
+            terrain[randX][randY - 1] = '~';
+            randX--;
+            continue;
+        }
+        if(i % 2 == 1) {
+            randX++;
+        }
     }
 }
+
+
 
 void buildTerrain(char terrain[21][80]) {
     buildPerimeter(terrain);
