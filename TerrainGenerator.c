@@ -114,6 +114,10 @@ void createWater(char terrain[21][80]) {
 
     randX = (rand() % 15) + 1;
     randY = (rand() % 65) + 1;
+    while(!isValid(randX, randY, terrain)){
+        randX = (rand() % 15) + 1;
+        randY = (rand() % 65) + 1;
+    }
 
     for(i = 0; i < 13; i++) {
         if(isValid(randX, randY, terrain)) {
@@ -136,40 +140,38 @@ void createWater(char terrain[21][80]) {
 void addLongGrass(char terrain[21][80]) {
     int randX, randY, i;
 
-    randX = (rand() % 9) + 11; //11 - 19
-    randY = (rand() % 35) + 35; // 35 - 69
-    for(i = 0; i < 13; i++) {
-        if(isValid(randX, randY, terrain)) {
-            terrain[randX][randY] = ':';
-        }
-        if(isValid(randX + 1, randY, terrain)) {
-            terrain[randX + 1][randY] = ':';
-        }
-        if(isValid(randX - 1, randY + 1, terrain)) {
-            terrain[randX - 1][randY + 1] = ':';
-        }
-        if(isValid(randX - 1, randY - 1, terrain)) {
-            terrain[randX -1][randY - 1] = ':';
-        }
-        randY++;
-        if(i % 3 == 1) randX--;
+    randX = (rand() % 6) + 2; // 2 - 7
+    randY = (rand() % 32) + 4; // 4 - 35
+    while(!isValid(randX, randY, terrain)){
+        randX = (rand() % 6) + 2; // 2 - 7
+        randY = (rand() % 32) + 4; // 4 - 35
     }
 
-    randX = (rand() % 8) + 2; // 2 - 9
-    randY = (rand() % 30) + 4; // 4 - 33
-    for(i = 0; i < 13; i++) {
+    for(i = 0; i < 18; i++) {
+        if(isValid(randX, randY, terrain)) {
+            terrain[randX][randY] = ':';
+        }
+        if(isValid(randX - 1, randY, terrain)) {
+            terrain[randX - 1][randY] = ':';
+        }
+        randX--;
+        randY--;
+    }
+
+    randX = (rand() % 9) + 11; //11 - 19
+    randY = (rand() % 35) + 38; // 38 - 72
+    while(!isValid(randX, randY, terrain)){
+        randX = (rand() % 9) + 11; //11 - 19
+        randY = (rand() % 35) + 38; // 38 - 72
+    }
+    for(i = 0; i < 18; i++) {
         if(isValid(randX, randY, terrain)) {
             terrain[randX][randY] = ':';
         }
         if(isValid(randX + 1, randY, terrain)) {
             terrain[randX + 1][randY] = ':';
         }
-        if(isValid(randX - 1, randY + 1, terrain)) {
-            terrain[randX - 1][randY + 1] = ':';
-        }
-        if(isValid(randX - 1, randY - 1, terrain)) {
-            terrain[randX -1][randY - 1] = ':';
-        }
+        randX++;
         randY++;
     }
 }
