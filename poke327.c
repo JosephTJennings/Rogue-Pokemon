@@ -735,11 +735,42 @@ static void print_map(map_t *m)
   }
 }
 
+static void findSurroundingMaps(int direction[4], int x, int y, map_t* world[401][401]) {
+  int i;
+  // n, e, s, w
+  // debating adding another index at the end that would determine if there are surrounding maps, if not then generate a new one, else get path location...
+  for(i = 0; i < 4; i++) {
+    direction[i] = 0; // set all directions to unvisited
+  }
+
+  if(y >= 0 && y < 401 && world[y - 1][x] != NULL) direction[0] = 1; // north
+  if(x >= 0 && x + 1 < 401 && world[y][x + 1] != NULL) direction[1] = 1; // east
+  if(y >= 0 && y + 1 < 401 && world[y + 1][x] != NULL) direction[2] = 1; // south
+  if(x >= 0 && x < 401 && world[y][x - 1] != NULL) direction[3] = 1; // west
+}
+
+static void printSurroundingMaps(int direction[4]) {
+  int i;
+  for(i = 0; i < 4; i++) {
+    printf("%d, ", direction[i]);
+  }
+  printf("\n");
+}
+
+
 int main(int argc, char *argv[])
 {
   map_t d;
   struct timeval tv;
   uint32_t seed;
+
+  char command;
+  int quitCommand;
+  char buff[100];
+  map_t* world[401][401];
+  int curX;
+  int curY;
+  int surroundingMaps[4];
 
   if (argc == 2) {
     seed = atoi(argv[1]);
@@ -753,6 +784,49 @@ int main(int argc, char *argv[])
 
   new_map(&d);
   print_map(&d);
+  curX = 200;
+  curY = 200;
+  world[curX][curY] = &d; // set the center as the first generated map.
   
+  command = '.';
+  findSurroundingMaps(surroundingMaps, curX, curY, world);
+  printf("Starting input:\n");
+  while(fgets(buff, sizeof(buff), stdin)){
+    command = buff[0];
+    //curX = (int) buff[1]; // need to fix
+    //curY = (int) buff[2];// need to fix
+    switch(command) {
+      case 'q':
+        quitCommand = 1;
+        break;
+      case 'n': 
+        curY--;
+        findSurroundingMaps(surroundingMaps, curX, curY, world);
+        printSurroundingMaps(surroundingMaps);
+        printf("(%d, %d)\n", curX, curY);
+        break;
+      case 's': 
+        curY++;
+        findSurroundingMaps(surroundingMaps, curX, curY, world);
+        printSurroundingMaps(surroundingMaps);
+        printf("(%d, %d)\n", curX, curY);
+        break;
+      case 'e':
+        curX++;
+        findSurroundingMaps(surroundingMaps, curX, curY, world);
+        printSurroundingMaps(surroundingMaps);
+        printf("(%d, %d)\n", curX, curY);
+        break;
+      case 'w':
+        curX--;
+        findSurroundingMaps(surroundingMaps, curX, curY, world);
+        printSurroundingMaps(surroundingMaps);
+        printf("(%d, %d)\n", curX, curY);
+        break;
+      case 'f': break;
+      default: printf("Invalid command, type one of the following characters: n, e, s, w, f, q\n");
+    }
+    if(quitCommand) break;
+  }
   return 0;
 }
