@@ -734,12 +734,16 @@ static void print_map(map_t *m)
   }
 }
 
-static void findSurroundingMaps(int direction[5], int x, int y, map_t* world[401][401]) {
+static void findSurroundingMaps(int* direction, int x, int y, map_t* world[][401]) {
   int i;
   // n, e, s, w
   // debating adding another index at the end that would determine if there are surrounding maps, if not then generate a new one, else get path location...
   for(i = 0; i < 5; i++) {
     direction[i] = 0; // set all directions to unvisited
+  }
+  if(world[y - 1][x] != NULL) printf("found north\n");
+  else {
+    printf("north map NULL\n");
   }
 
   if(y >= 0 && y < 401 && world[y - 1][x] != NULL){ direction[0] = 1; direction[4] = 1;}// north, mark as found
@@ -748,7 +752,7 @@ static void findSurroundingMaps(int direction[5], int x, int y, map_t* world[401
   if(x >= 0 && x < 401 && world[y][x - 1] != NULL){ direction[3] = 1; direction[4] = 1;}// west
 }
 
-static void printSurroundingMaps(int direction[5]) {
+static void printSurroundingMaps(int* direction) {
   int i;
   for(i = 0; i < 4; i++) {
     printf("%d, ", direction[i]);
@@ -756,7 +760,7 @@ static void printSurroundingMaps(int direction[5]) {
   printf("%d\n", direction[4]);
 }
 
-static void destroyWorld(map_t* world[401][401]) {
+static void destroyWorld(map_t* world[][401]) {
   int i;
   int j;
   int worlds;
@@ -766,7 +770,6 @@ static void destroyWorld(map_t* world[401][401]) {
     for(j = 0; j < 401; j++) {
       if(world[i][j] != NULL) {
         printf("Destroying <%d, %d>\n", i , j);
-        //print_map(world[i][j]);
         free(world[i][j]);
         worlds++;
       }
@@ -775,22 +778,55 @@ static void destroyWorld(map_t* world[401][401]) {
   printf("\ndestroyed %d worlds :) \n", worlds);
 }
 
-static map_t* generateMap(int direction[5], map_t* curMap) {
+static void generateMap(int x, int y, int* direction, map_t* world[][401]) {
   //Will only be called if there has been no map generated...
   int surrounded;
+  pair_t from, to;
   map_t* tmp;
 
   surrounded = direction[4];
   printf("creating world\n");
 
+  tmp = malloc(sizeof(map_t));
   if(surrounded){
+    from[dim_y] = 1;
+    to[dim_y] = MAP_Y - 2;
+    if(direction[0]){ // if map found north
+      from[dim_x] = world[y - 1][x]->s; // get the south gate from the north map.
+    } else {
+      from[dim_x] = 1 + rand() % (MAP_X - 2);
+    }
+    if(direction[2]){ // if map found south
+      to[dim_x] = world[y + 1][x]->n;
+    } else {
+      to[dim_x] = 1 + rand() % (MAP_X - 2);
+    }
+
+    if(direction[1]){ // if map found east
+      from[dim_y] = world[y][x + 1]->w;
+    } else {
+      from[dim_y] = 1 + rand() % (MAP_Y - 2);
+    }
+    if(direction[3]){ // if map found west
+      to[dim_y] = world[y][x - 1]->e;
+    } else {
+      to[dim_y] = 1 + rand() % (MAP_Y - 2);
+    }
+
+
+    smooth_height(tmp);
+    map_terrain(tmp, from[dim_x], to[dim_x], from[dim_y], to[dim_y]);
+    place_boulders(tmp);
+    place_trees(tmp);
+    build_paths(tmp);
+    place_pokemart(tmp);
+    place_center(tmp);
+
 
   } else{
-    tmp = malloc(sizeof(map_t));
     new_map(tmp);
-    return tmp;
   }
-  return NULL;
+  world[y][x] = tmp;
 }
 
 int main(int argc, char *argv[]){
@@ -828,8 +864,6 @@ int main(int argc, char *argv[]){
   printf("Starting input:\n");
   while(command != 'q'){
     scanf(" %c", &command);
-    //curX = (int) buff[1]; // need to fix
-    //curY = (int) buff[2];// need to fix
     switch(command) {
       case 'q':
         quitCommand = 1;
@@ -853,14 +887,16 @@ int main(int argc, char *argv[]){
       default: printf("Invalid command, type one of the following characters: n, e, s, w, f, q\n");
     }
     if(quitCommand) break;
+
     findSurroundingMaps(surroundingMaps, curX, curY, world);
-    printf("<%d, %d>\n", curX, curY);
     printSurroundingMaps(surroundingMaps);
+    
     if(world[curX][curY] == NULL) {
-      tmpMap = generateMap(surroundingMaps, world[curX][curY]);
-      world[curX][curY] = tmpMap;
+      generateMap(curX, curY, surroundingMaps, world);
+      //world[curX][curY] = tmpMap;
     }
-    print_map(world[curX][curY]);
+    print_map(world[curY][curX]);
+    printf("<%d, %d> %p\n", curX, curY, world[curX][curY]);
   }
   return 0;
 }
