@@ -769,7 +769,7 @@ static void destroyWorld(map_t* world[][401]) {
   for(i = 0; i < 401; i++) {
     for(j = 0; j < 401; j++) {
       if(world[i][j] != NULL) {
-        printf("Destroying <%d, %d>\n", i , j);
+        printf("Destroying <%d, %d>\n", i - 200 , j - 200);
         free(world[i][j]);
         worlds++;
       }
@@ -883,6 +883,8 @@ int main(int argc, char *argv[]){
         break;
       case 'f':
         scanf(" %d %d", &curX, &curY);
+        curX = curX + 200;
+        curY = curY + 200;
         break;
       default: printf("Invalid command, type one of the following characters: n, e, s, w, f, q\n");
     }
