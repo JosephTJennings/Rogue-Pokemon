@@ -741,10 +741,6 @@ static void findSurroundingMaps(int* direction, int x, int y, map_t* world[][401
   for(i = 0; i < 5; i++) {
     direction[i] = 0; // set all directions to unvisited
   }
-  if(world[y - 1][x] != NULL) printf("found north\n");
-  else {
-    printf("north map NULL\n");
-  }
 
   if(y >= 0 && y < 401 && world[y - 1][x] != NULL){ direction[0] = 1; direction[4] = 1;}// north, mark as found
   if(x >= 0 && x + 1 < 401 && world[y][x + 1] != NULL){ direction[1] = 1; direction[4] = 1;}// east
@@ -769,13 +765,18 @@ static void destroyWorld(map_t* world[][401]) {
   for(i = 0; i < 401; i++) {
     for(j = 0; j < 401; j++) {
       if(world[i][j] != NULL) {
-        printf("Destroying <%d, %d>\n", i - 200 , j - 200);
+        printf("*");
+        printf("Destroying <%d, %d>   (%d, %d)\n", i - 200 , j - 200, i, j);
         free(world[i][j]);
         worlds++;
       }
     }
   }
   printf("\ndestroyed %d worlds :) \n", worlds);
+}
+
+static int distanceFromCenter() {
+  return 1;
 }
 
 static void generateMap(int x, int y, int* direction, map_t* world[][401]) {
@@ -832,6 +833,7 @@ static void generateMap(int x, int y, int* direction, map_t* world[][401]) {
 int main(int argc, char *argv[]){
   struct timeval tv;
   uint32_t seed;
+  int i, j;
 
   char command;
   int quitCommand;
@@ -851,6 +853,12 @@ int main(int argc, char *argv[]){
 
   printf("Using seed: %u\n", seed);
   srand(seed);
+  for(i = 0; i < 401; i++) {
+    for(j = 0; j < 401; j++) {
+      world[i][j] = NULL;
+    }
+  }
+  //distanceFromCenter();
 
   curX = 200;
   curY = 200;
@@ -858,7 +866,7 @@ int main(int argc, char *argv[]){
   tmpMap = malloc(sizeof(map_t));
   new_map(tmpMap);
   print_map(tmpMap);
-  world[curX][curY] = tmpMap; // set the center as the first generated map.
+  world[curY][curX] = tmpMap; // set the center as the first generated map.
 
   command = '.';
   printf("Starting input:\n");
@@ -883,6 +891,7 @@ int main(int argc, char *argv[]){
         break;
       case 'f':
         scanf(" %d %d", &curX, &curY);
+        printf("new x, y: %d, %d\n", curX, curY);
         curX = curX + 200;
         curY = curY + 200;
         break;
@@ -890,12 +899,11 @@ int main(int argc, char *argv[]){
     }
     if(quitCommand) break;
 
-    findSurroundingMaps(surroundingMaps, curX, curY, world);
-    printSurroundingMaps(surroundingMaps);
+    //findSurroundingMaps(surroundingMaps, curX, curY, world);
+    //printSurroundingMaps(surroundingMaps);
     
-    if(world[curX][curY] == NULL) {
+    if(world[curY][curX] == NULL) {
       generateMap(curX, curY, surroundingMaps, world);
-      //world[curX][curY] = tmpMap;
     }
     print_map(world[curY][curX]);
     printf("<%d, %d> %p\n", curX, curY, world[curX][curY]);
