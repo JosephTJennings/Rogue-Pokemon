@@ -681,8 +681,6 @@ static int new_map(map_t *m)
   place_boulders(m);
   place_trees(m);
   build_paths(m);
-  place_pokemart(m);
-  place_center(m);
 
   return 0;
 }
@@ -748,14 +746,6 @@ static void findSurroundingMaps(int* direction, int x, int y, map_t* world[][401
   if(x >= 0 && x < 401 && world[y][x - 1] != NULL){ direction[3] = 1; direction[4] = 1;}// west
 }
 
-static void printSurroundingMaps(int* direction) {
-  int i;
-  for(i = 0; i < 4; i++) {
-    printf("%d, ", direction[i]);
-  }
-  printf("%d\n", direction[4]);
-}
-
 static void destroyWorld(map_t* world[][401]) {
   int i;
   int j;
@@ -765,7 +755,6 @@ static void destroyWorld(map_t* world[][401]) {
   for(i = 0; i < 401; i++) {
     for(j = 0; j < 401; j++) {
       if(world[i][j] != NULL) {
-        printf("*");
         printf("Destroying <%d, %d>   (%d, %d)\n", i - 200 , j - 200, i, j);
         free(world[i][j]);
         worlds++;
@@ -775,19 +764,29 @@ static void destroyWorld(map_t* world[][401]) {
   printf("\ndestroyed %d worlds :) \n", worlds);
 }
 
-static int distanceFromCenter() {
-  return 1;
+static float distanceFromCenter(int curX, int curY) {
+  int manhattan;
+  float prob;
+  manhattan = abs(200 - curX) + abs(200 - curY);
+  prob = (((-45.000 * manhattan) / 200) + 50);
+  if(prob < 0) return 5.00;
+  return prob;
 }
 
 static void generateMap(int x, int y, int* direction, map_t* world[][401]) {
   //Will only be called if there has been no map generated...
   int surrounded;
+  int chance;
+  float prob;
   pair_t from, to;
   map_t* tmp;
 
   surrounded = direction[4];
-  printf("creating world\n");
+  prob = distanceFromCenter(x, y);
+  chance = rand() % 101;
 
+  printf("creating world\n");
+  printf("prob %f\n", prob);
   tmp = malloc(sizeof(map_t));
   if(surrounded){
     from[dim_y] = 1;
@@ -820,13 +819,13 @@ static void generateMap(int x, int y, int* direction, map_t* world[][401]) {
     place_boulders(tmp);
     place_trees(tmp);
     build_paths(tmp);
-    place_pokemart(tmp);
-    place_center(tmp);
-
-
   } else{
     new_map(tmp);
   }
+  if(chance < prob) {
+      place_pokemart(tmp);
+      place_center(tmp);
+    }
   world[y][x] = tmp;
 }
 
@@ -858,13 +857,14 @@ int main(int argc, char *argv[]){
       world[i][j] = NULL;
     }
   }
-  //distanceFromCenter();
 
   curX = 200;
   curY = 200;
 
   tmpMap = malloc(sizeof(map_t));
   new_map(tmpMap);
+  place_pokemart(tmpMap);
+  place_center(tmpMap);
   print_map(tmpMap);
   world[curY][curX] = tmpMap; // set the center as the first generated map.
 
@@ -899,14 +899,13 @@ int main(int argc, char *argv[]){
     }
     if(quitCommand) break;
 
-    //findSurroundingMaps(surroundingMaps, curX, curY, world);
-    //printSurroundingMaps(surroundingMaps);
+    findSurroundingMaps(surroundingMaps, curX, curY, world);
     
     if(world[curY][curX] == NULL) {
       generateMap(curX, curY, surroundingMaps, world);
     }
     print_map(world[curY][curX]);
-    printf("<%d, %d> %p\n", curX, curY, world[curX][curY]);
+    printf("<%d, %d>\n", curX - 200, curY - 200);
   }
   return 0;
 }
