@@ -1,0 +1,8 @@
+Assignment1.02 generates a total world of 401x401 maps.
+
+Structures include map_t and queue_node_t
+The assignment allows for a variety of movements between maps, fed by the 
+console. 
+
+Compile using make. 
+Author: Joseph Jennings (jtj9)

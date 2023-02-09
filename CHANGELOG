@@ -1,0 +1,123 @@
+commit 3a61c2a8429ceff28280eb0a88b266dde89bb646
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 8 21:31:09 2023 -0600
+
+    Fixed issue with bounds.
+
+commit 3a4c35e190a0fb1a5acebfb2035351fb12971bdf
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 8 19:44:52 2023 -0600
+
+    Fixed being able to exit map.
+
+commit d54707a6d92af45b81540bba4605f490158a047e
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 8 19:25:46 2023 -0600
+
+    Added distance to poke-marts and centers.
+
+commit fc8c5819943688b265c68b51a7d6ca2bc912749e
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 8 15:51:03 2023 -0600
+
+    Fixed issue with double assigning a pointer.
+
+commit 2d26653a53ce91210667a35020df3aca8f5ac602
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 8 12:46:22 2023 -0600
+
+    Testing proper indexing for fly offsets
+
+commit bad86cddb875d439c6eddb1329710df58e66c929
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 8 10:17:44 2023 -0600
+
+    Generates a new map if not created, with paths.
+
+commit ca3527601fe4c2e69c9b7b8a1b3d10530a844aa4
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Tue Feb 7 20:08:32 2023 -0600
+
+    Properly parses user input.
+    Added ability to generate maps if there are no surrounding maps.
+
+commit 08a669e9d14f53a5e3dde0f5b9c88fe3ff130068
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Mon Feb 6 13:01:06 2023 -0600
+
+    Added functionality to read user input.
+    Also function to find neighboring maps.
+
+commit c5aba0ee3f225089249bb392e6b820ea0c20ebb2
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Sun Feb 5 20:35:50 2023 -0600
+
+    Fixed errors with compiling.
+
+commit ef7e9a99287b53a0b0875a619257c0ba19e9a500
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Sun Feb 5 20:26:18 2023 -0600
+
+    Merged project with Dr. Schaefer.
+
+commit 5ba3d3d69c00c4128b0f74be1c47f256f566e825
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Tue Jan 31 10:04:35 2023 -0600
+
+    Fixed long grass to make ensure no collisions.
+
+commit eebd33125cc89db825e0e7d0cd744350c0c77dc9
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Sun Jan 29 23:33:10 2023 -0600
+
+    added Makefile
+
+commit 0711f1f7a5437d3e1d50283a3c49ed91fb311ba3
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Sun Jan 29 23:32:48 2023 -0600
+
+    added trees and changed grass generation.
+
+commit 50ab7b2a1560b50a4d56dc8b6644b96c7040dfd1
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Sun Jan 29 23:16:59 2023 -0600
+
+    Changed default grass to short and added longGrass generation.
+
+commit a455adfc3c1b9b051fc0d2fe923084e2a619e39d
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Sun Jan 29 23:10:40 2023 -0600
+
+    Added short grass generation and changed algorithm of water
+
+commit 8813ad686905bd7d7f504a94cda14db866759208
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Sun Jan 29 22:48:26 2023 -0600
+
+    Added water to map
+
+commit e8d7ca4c0c14f2a24607eae1ebec300fb23933df
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Sun Jan 29 22:25:07 2023 -0600
+
+    Added pokecenters and pokemarts.
+    Began implementation of water.
+
+commit b90c66d83bb1cd4348f621c965a05eab1154da4e
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Thu Jan 26 16:15:24 2023 -0600
+
+    Added functionality for paths.
+
+commit 1a1d60c34f862282d851511512ce0910200d4b0d
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Thu Jan 26 12:14:29 2023 -0600
+
+    Added basic terrain generation.
+    Builds perimeter then fills with grass.
+
+commit e3bdffdb1f3d2afd1711367606c8ef835b7fe1f5
+Author: JosephTJennings <92567784+JosephTJennings@users.noreply.github.com>
+Date:   Wed Jan 25 11:39:32 2023 -0600
+
+    Initial commit

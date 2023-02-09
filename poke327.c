@@ -867,6 +867,7 @@ int main(int argc, char *argv[]){
   printf("<%d, %d>\n", curX - 200, curY - 200);
 
   command = '.';
+  quitCommand = 1;
   while(command != 'q'){
     scanf(" %c", &command);
     switch(command) {
@@ -892,7 +893,6 @@ int main(int argc, char *argv[]){
         break;
       case 'f':
         scanf(" %d %d", &curX, &curY);
-        printf("new x, y: %d, %d\n", curX, curY);
         curX = curX + 200;
         curY = curY + 200;
         break;
