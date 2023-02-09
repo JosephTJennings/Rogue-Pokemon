@@ -788,6 +788,8 @@ static void generateMap(int x, int y, int* direction, map_t* world[][401]) {
   printf("creating world\n");
   printf("prob %f\n", prob);
   tmp = malloc(sizeof(map_t));
+
+
   if(surrounded){
     from[dim_y] = 1;
     to[dim_y] = MAP_Y - 2;
@@ -867,9 +869,9 @@ int main(int argc, char *argv[]){
   place_center(tmpMap);
   print_map(tmpMap);
   world[curY][curX] = tmpMap; // set the center as the first generated map.
+  printf("<%d, %d>\n", curX - 200, curY - 200);
 
   command = '.';
-  printf("Starting input:\n");
   while(command != 'q'){
     scanf(" %c", &command);
     switch(command) {
@@ -877,17 +879,21 @@ int main(int argc, char *argv[]){
         quitCommand = 1;
         destroyWorld(world);
         break;
-      case 'n': 
+      case 'n':
         curY--;
+        if(curY < 0) curY++;
         break;
       case 's': 
         curY++;
+        if(curY > 400) curY--;
         break;
       case 'e':
         curX++;
+        if(curX > 400) curX--;
         break;
       case 'w':
         curX--;
+        if(curX < 0) curX++;
         break;
       case 'f':
         scanf(" %d %d", &curX, &curY);
