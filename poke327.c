@@ -867,7 +867,7 @@ int main(int argc, char *argv[]){
   printf("<%d, %d>\n", curX - 200, curY - 200);
 
   command = '.';
-  quitCommand = 1;
+  quitCommand = 0;
   while(command != 'q'){
     scanf(" %c", &command);
     switch(command) {
