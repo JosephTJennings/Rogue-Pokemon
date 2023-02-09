@@ -755,13 +755,12 @@ static void destroyWorld(map_t* world[][401]) {
   for(i = 0; i < 401; i++) {
     for(j = 0; j < 401; j++) {
       if(world[i][j] != NULL) {
-        printf("Destroying <%d, %d>   (%d, %d)\n", i - 200 , j - 200, i, j);
         free(world[i][j]);
         worlds++;
       }
     }
   }
-  printf("\ndestroyed %d worlds :) \n", worlds);
+  printf("\ndestroyed %d maps :) \n", worlds);
 }
 
 static float distanceFromCenter(int curX, int curY) {
@@ -785,11 +784,7 @@ static void generateMap(int x, int y, int* direction, map_t* world[][401]) {
   prob = distanceFromCenter(x, y);
   chance = rand() % 101;
 
-  printf("creating world\n");
-  printf("prob %f\n", prob);
   tmp = malloc(sizeof(map_t));
-
-
   if(surrounded){
     from[dim_y] = 1;
     to[dim_y] = MAP_Y - 2;
