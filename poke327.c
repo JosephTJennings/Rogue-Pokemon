@@ -839,6 +839,7 @@ int main(int argc, char *argv[]){
   int curX;
   int curY;
   int surroundingMaps[5];
+  surroundMaps[0] = 0;
 
   if (argc == 2) {
     seed = atoi(argv[1]);
