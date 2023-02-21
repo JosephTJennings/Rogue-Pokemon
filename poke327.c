@@ -74,6 +74,10 @@ typedef struct world {
   pair_t cur_idx;
   map_t *cur_map;
 } world_t;
+typedef struct player {
+  int x;
+  int y;
+}main_pc;
 
 /* Even unallocated, a WORLD_SIZE x WORLD_SIZE array of pointers is a very *
  * large thing to put on the stack.  To avoid that, world is a global.     */
@@ -763,21 +767,24 @@ static int place_trees(map_t *m)
   return 0;
 }
 
-static void generateNPCS(map_t* m) {
-  int hikerCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 15, 10, 15, 15, INT_MAX, INT_MAX};
-  int rivalCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 20, 10, INT_MAX, INT_MAX, INT_MAX, INT_MAX};
-  rivalCost[0]= hikerCost[0];
+static main_pc* generatePC(map_t* m) {
+  //int hikerCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 15, 10, 15, 15, INT_MAX, INT_MAX};
+  //int rivalCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 20, 10, INT_MAX, INT_MAX, INT_MAX, INT_MAX};
+  //rivalCost[0]= hikerCost[0];
   int curX, curY;
+  main_pc* pc;
+  pc = malloc(sizeof(main_pc));
 
   curX = curY = 15;
   while(m->map[curX][curY] != ter_path) { // generate PC
-    curX = rand() % 22; // 0 - 21
-    curY = rand() % 81; // 0 - 80
+    curX = (rand() % 19) + 1; // 1 - 19
+    curY = (rand() % 78) + 1; // 1 - 78
   }
   m->map[curX][curY] = npc_player; // set current location to PC
+  pc->x = curX;
+  pc->y = curY;
 
-
-  return;
+  return pc;
 }
 
 // New map expects cur_idx to refer to the index to be generated.  If that
@@ -787,6 +794,7 @@ static int new_map()
 {
   int d, p;
   int e, w, n, s;
+  main_pc* pc;
 
   if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]]) {
     world.cur_map = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]];
@@ -843,7 +851,8 @@ static int new_map()
   if ((rand() % 100) < p || !d) {
     place_center(world.cur_map);
   }
-  generateNPCS(world.cur_map);
+  pc = generatePC(world.cur_map);
+  
   return 0;
 }
 
