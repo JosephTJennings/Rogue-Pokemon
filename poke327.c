@@ -54,7 +54,8 @@ typedef enum __attribute__ ((__packed__)) terrain_type {
   ter_mountain,
   ter_forest,
   ter_water,
-  ter_gate
+  ter_gate,
+  npc_player
 } terrain_type_t;
 
 typedef struct map {
@@ -762,6 +763,23 @@ static int place_trees(map_t *m)
   return 0;
 }
 
+static void generateNPCS(map_t* m) {
+  int hikerCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 15, 10, 15, 15, INT_MAX, INT_MAX};
+  int rivalCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 20, 10, INT_MAX, INT_MAX, INT_MAX, INT_MAX};
+  rivalCost[0]= hikerCost[0];
+  int curX, curY;
+
+  curX = curY = 15;
+  while(m->map[curX][curY] != ter_path) { // generate PC
+    curX = rand() % 22; // 0 - 21
+    curY = rand() % 81; // 0 - 80
+  }
+  m->map[curX][curY] = npc_player; // set current location to PC
+
+
+  return;
+}
+
 // New map expects cur_idx to refer to the index to be generated.  If that
 // map has already been generated then the only thing this does is set
 // cur_map.
@@ -825,7 +843,7 @@ static int new_map()
   if ((rand() % 100) < p || !d) {
     place_center(world.cur_map);
   }
-
+  generateNPCS(world.cur_map);
   return 0;
 }
 
@@ -866,6 +884,9 @@ static void print_map()
       case ter_water:
         putchar('~');
         break;
+      case npc_player:
+        putchar('@');
+        break;
       default:
         default_reached = 1;
         break;
@@ -899,6 +920,7 @@ void delete_world()
     }
   }
 }
+
 
 int main(int argc, char *argv[])
 {
