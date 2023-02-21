@@ -2,8 +2,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <limits.h>
 #include <sys/time.h>
 #include <assert.h>
@@ -29,7 +27,7 @@ typedef enum dim {
   num_dims
 } dim_t;
 
-typedef uint8_t pair_t[num_dims];
+typedef int16_t pair_t[num_dims];
 
 #define MAP_X              80
 #define MAP_Y              21
@@ -37,6 +35,7 @@ typedef uint8_t pair_t[num_dims];
 #define MIN_BOULDERS       10
 #define TREE_PROB          95
 #define BOULDER_PROB       95
+#define WORLD_SIZE         401
 
 #define mappair(pair) (m->map[pair[dim_y]][pair[dim_x]])
 #define mapxy(x, y) (m->map[y][x])
@@ -54,13 +53,14 @@ typedef enum __attribute__ ((__packed__)) terrain_type {
   ter_clearing,
   ter_mountain,
   ter_forest,
-  ter_water
+  ter_water,
+  ter_gate
 } terrain_type_t;
 
 typedef struct map {
   terrain_type_t map[MAP_Y][MAP_X];
   uint8_t height[MAP_Y][MAP_X];
-  uint8_t n, s, e, w;
+  int8_t n, s, e, w;
 } map_t;
 
 typedef struct queue_node {
@@ -68,11 +68,21 @@ typedef struct queue_node {
   struct queue_node *next;
 } queue_node_t;
 
+typedef struct world {
+  map_t *world[WORLD_SIZE][WORLD_SIZE];
+  pair_t cur_idx;
+  map_t *cur_map;
+} world_t;
+
+/* Even unallocated, a WORLD_SIZE x WORLD_SIZE array of pointers is a very *
+ * large thing to put on the stack.  To avoid that, world is a global.     */
+world_t world;
+
 static int32_t path_cmp(const void *key, const void *with) {
   return ((path_t *) key)->cost - ((path_t *) with)->cost;
 }
 
-static int32_t edge_penalty(uint8_t x, uint8_t y)
+static int32_t edge_penalty(int8_t x, int8_t y)
 {
   return (x == 1 || y == 1 || x == MAP_X - 2 || y == MAP_Y - 2) ? 2 : 1;
 }
@@ -179,19 +189,89 @@ static int build_paths(map_t *m)
 {
   pair_t from, to;
 
-  from[dim_x] = 1;
-  to[dim_x] = MAP_X - 2;
-  from[dim_y] = m->w;
-  to[dim_y] = m->e;
+  /*  printf("%d %d %d %d\n", m->n, m->s, m->e, m->w);*/
 
-  dijkstra_path(m, from, to);
+  if (m->e != -1 && m->w != -1) {
+    from[dim_x] = 1;
+    to[dim_x] = MAP_X - 2;
+    from[dim_y] = m->w;
+    to[dim_y] = m->e;
 
-  from[dim_y] = 1;
-  to[dim_y] = MAP_Y - 2;
-  from[dim_x] = m->n;
-  to[dim_x] = m->s;
+    dijkstra_path(m, from, to);
+  }
 
-  dijkstra_path(m, from, to);
+  if (m->n != -1 && m->s != -1) {
+    from[dim_y] = 1;
+    to[dim_y] = MAP_Y - 2;
+    from[dim_x] = m->n;
+    to[dim_x] = m->s;
+
+    dijkstra_path(m, from, to);
+  }
+
+  if (m->e == -1) {
+    if (m->s == -1) {
+      from[dim_x] = 1;
+      from[dim_y] = m->w;
+      to[dim_x] = m->n;
+      to[dim_y] = 1;
+    } else {
+      from[dim_x] = 1;
+      from[dim_y] = m->w;
+      to[dim_x] = m->s;
+      to[dim_y] = MAP_Y - 2;
+    }
+
+    dijkstra_path(m, from, to);
+  }
+
+  if (m->w == -1) {
+    if (m->s == -1) {
+      from[dim_x] = MAP_X - 2;
+      from[dim_y] = m->e;
+      to[dim_x] = m->n;
+      to[dim_y] = 1;
+    } else {
+      from[dim_x] = MAP_X - 2;
+      from[dim_y] = m->e;
+      to[dim_x] = m->s;
+      to[dim_y] = MAP_Y - 2;
+    }
+
+    dijkstra_path(m, from, to);
+  }
+
+  if (m->n == -1) {
+    if (m->e == -1) {
+      from[dim_x] = 1;
+      from[dim_y] = m->w;
+      to[dim_x] = m->s;
+      to[dim_y] = MAP_Y - 2;
+    } else {
+      from[dim_x] = MAP_X - 2;
+      from[dim_y] = m->e;
+      to[dim_x] = m->s;
+      to[dim_y] = MAP_Y - 2;
+    }
+
+    dijkstra_path(m, from, to);
+  }
+
+  if (m->s == -1) {
+    if (m->e == -1) {
+      from[dim_x] = 1;
+      from[dim_y] = m->w;
+      to[dim_x] = m->n;
+      to[dim_y] = 1;
+    } else {
+      from[dim_x] = MAP_X - 2;
+      from[dim_y] = m->e;
+      to[dim_x] = m->n;
+      to[dim_y] = 1;
+    }
+
+    dijkstra_path(m, from, to);
+  }
 
   return 0;
 }
@@ -203,6 +283,7 @@ static int gaussian[5][5] = {
   {  4, 16, 26, 16,  4 },
   {  1,  4,  7,  4,  1 }
 };
+
 static int smooth_height(map_t *m)
 {
   int32_t i, x, y;
@@ -464,7 +545,7 @@ static terrain_type_t border_type(map_t *m, int32_t x, int32_t y)
   }
 }
 
-static int map_terrain(map_t *m, uint8_t n, uint8_t s, uint8_t e, uint8_t w)
+static int map_terrain(map_t *m, int8_t n, int8_t s, int8_t e, int8_t w)
 {
   int32_t i, x, y;
   queue_node_t *head, *tail, *tmp;
@@ -481,6 +562,7 @@ static int map_terrain(map_t *m, uint8_t n, uint8_t s, uint8_t e, uint8_t w)
   num_total = num_grass + num_clearing + num_mountain + num_forest + num_water;
 
   memset(&m->map, 0, sizeof (m->map));
+
   /* Seed with some values */
   for (i = 0; i < num_total; i++) {
     do {
@@ -516,7 +598,7 @@ static int map_terrain(map_t *m, uint8_t n, uint8_t s, uint8_t e, uint8_t w)
   fwrite(&m->map, sizeof (m->map), 1, out);
   fclose(out);
   */
-  
+
   /* Diffuse the vaules to fill the space */
   while (head) {
     x = head->x;
@@ -616,7 +698,7 @@ static int map_terrain(map_t *m, uint8_t n, uint8_t s, uint8_t e, uint8_t w)
     for (x = 0; x < MAP_X; x++) {
       if (y == 0 || y == MAP_Y - 1 ||
           x == 0 || x == MAP_X - 1) {
-        mapxy(x, y) = type = border_type(m, x, y);
+        mapxy(x, y) = border_type(m, x, y);
       }
     }
   }
@@ -626,14 +708,22 @@ static int map_terrain(map_t *m, uint8_t n, uint8_t s, uint8_t e, uint8_t w)
   m->e = e;
   m->w = w;
 
-  mapxy(n,         0        ) = ter_path;
-  mapxy(n,         1        ) = ter_path;
-  mapxy(s,         MAP_Y - 1) = ter_path;
-  mapxy(s,         MAP_Y - 2) = ter_path;
-  mapxy(0,         w        ) = ter_path;
-  mapxy(1,         w        ) = ter_path;
-  mapxy(MAP_X - 1, e        ) = ter_path;
-  mapxy(MAP_X - 2, e        ) = ter_path;
+  if (n != -1) {
+    mapxy(n,         0        ) = ter_gate;
+    mapxy(n,         1        ) = ter_gate;
+  }
+  if (s != -1) {
+    mapxy(s,         MAP_Y - 1) = ter_gate;
+    mapxy(s,         MAP_Y - 2) = ter_gate;
+  }
+  if (w != -1) {
+    mapxy(0,         w        ) = ter_gate;
+    mapxy(1,         w        ) = ter_gate;
+  }
+  if (e != -1) {
+    mapxy(MAP_X - 1, e        ) = ter_gate;
+    mapxy(MAP_X - 2, e        ) = ter_gate;
+  }
 
   return 0;
 }
@@ -672,27 +762,83 @@ static int place_trees(map_t *m)
   return 0;
 }
 
-static int new_map(map_t *m)
+// New map expects cur_idx to refer to the index to be generated.  If that
+// map has already been generated then the only thing this does is set
+// cur_map.
+static int new_map()
 {
-  smooth_height(m);
-  map_terrain(m,
-              1 + rand() % (MAP_X - 2), 1 + rand() % (MAP_X - 2),
-              1 + rand() % (MAP_Y - 2), 1 + rand() % (MAP_Y - 2));
-  place_boulders(m);
-  place_trees(m);
-  build_paths(m);
+  int d, p;
+  int e, w, n, s;
+
+  if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]]) {
+    world.cur_map = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]];
+    return 0;
+  }
+
+  world.cur_map                                             =
+    world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]] =
+    malloc(sizeof (*world.cur_map));
+
+  smooth_height(world.cur_map);
+  
+  if (!world.cur_idx[dim_y]) {
+    n = -1;
+  } else if (world.world[world.cur_idx[dim_y] - 1][world.cur_idx[dim_x]]) {
+    n = world.world[world.cur_idx[dim_y] - 1][world.cur_idx[dim_x]]->s;
+  } else {
+    n = 1 + rand() % (MAP_X - 2);
+  }
+  if (world.cur_idx[dim_y] == WORLD_SIZE - 1) {
+    s = -1;
+  } else if (world.world[world.cur_idx[dim_y] + 1][world.cur_idx[dim_x]]) {
+    s = world.world[world.cur_idx[dim_y] + 1][world.cur_idx[dim_x]]->n;
+  } else  {
+    s = 1 + rand() % (MAP_X - 2);
+  }
+  if (!world.cur_idx[dim_x]) {
+    w = -1;
+  } else if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] - 1]) {
+    w = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] - 1]->e;
+  } else {
+    w = 1 + rand() % (MAP_Y - 2);
+  }
+  if (world.cur_idx[dim_x] == WORLD_SIZE - 1) {
+    e = -1;
+  } else if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] + 1]) {
+    e = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] + 1]->w;
+  } else {
+    e = 1 + rand() % (MAP_Y - 2);
+  }
+  
+  map_terrain(world.cur_map, n, s, e, w);
+     
+  place_boulders(world.cur_map);
+  place_trees(world.cur_map);
+  build_paths(world.cur_map);
+  d = (abs(world.cur_idx[dim_x] - (WORLD_SIZE / 2)) +
+       abs(world.cur_idx[dim_y] - (WORLD_SIZE / 2)));
+  p = d > 200 ? 5 : (50 - ((45 * d) / 200));
+  //  printf("d=%d, p=%d\n", d, p);
+  if ((rand() % 100) < p || !d) {
+    place_pokemart(world.cur_map);
+  }
+  if ((rand() % 100) < p || !d) {
+    place_center(world.cur_map);
+  }
 
   return 0;
 }
 
-static void print_map(map_t *m)
+static void print_map()
 {
   int x, y;
   int default_reached = 0;
-  
+
+  printf("\n\n\n");
+
   for (y = 0; y < MAP_Y; y++) {
     for (x = 0; x < MAP_X; x++) {
-      switch (m->map[y][x]) {
+      switch (world.cur_map->map[y][x]) {
       case ter_boulder:
       case ter_mountain:
         putchar('%');
@@ -702,6 +848,7 @@ static void print_map(map_t *m)
         putchar('^');
         break;
       case ter_path:
+      case ter_gate:
         putchar('#');
         break;
       case ter_mart:
@@ -732,114 +879,33 @@ static void print_map(map_t *m)
   }
 }
 
-static void findSurroundingMaps(int* direction, int x, int y, map_t* world[][401]) {
-  int i;
-  // n, e, s, w
-  // debating adding another index at the end that would determine if there are surrounding maps, if not then generate a new one, else get path location...
-  for(i = 0; i < 5; i++) {
-    direction[i] = 0; // set all directions to unvisited
-  }
-
-  if(y >= 0 && y < 401 && world[y - 1][x] != NULL){ direction[0] = 1; direction[4] = 1;}// north, mark as found
-  if(x >= 0 && x + 1 < 401 && world[y][x + 1] != NULL){ direction[1] = 1; direction[4] = 1;}// east
-  if(y >= 0 && y + 1 < 401 && world[y + 1][x] != NULL){ direction[2] = 1; direction[4] = 1;}// south
-  if(x >= 0 && x < 401 && world[y][x - 1] != NULL){ direction[3] = 1; direction[4] = 1;}// west
+// The world is global because of its size, so init_world is parameterless
+void init_world()
+{
+  world.cur_idx[dim_x] = world.cur_idx[dim_y] = WORLD_SIZE / 2;
+  new_map();
 }
 
-static void destroyWorld(map_t* world[][401]) {
-  int i;
-  int j;
-  int worlds;
+void delete_world()
+{
+  int x, y;
 
-  worlds = 0;
-  for(i = 0; i < 401; i++) {
-    for(j = 0; j < 401; j++) {
-      if(world[i][j] != NULL) {
-        free(world[i][j]);
-        worlds++;
+  for (y = 0; y < WORLD_SIZE; y++) {
+    for (x = 0; x < WORLD_SIZE; x++) {
+      if (world.world[y][x]) {
+        free(world.world[y][x]);
+        world.world[y][x] = NULL;
       }
     }
   }
-  printf("\ndestroyed %d maps :) \n", worlds);
 }
 
-static float distanceFromCenter(int curX, int curY) {
-  int manhattan;
-  float prob;
-  manhattan = abs(200 - curX) + abs(200 - curY);
-  prob = (((-45.000 * manhattan) / 200) + 50);
-  if(prob < 0) return 5.00;
-  return prob;
-}
-
-static void generateMap(int x, int y, int* direction, map_t* world[][401]) {
-  //Will only be called if there has been no map generated...
-  int surrounded;
-  int chance;
-  float prob;
-  pair_t from, to;
-  map_t* tmp;
-
-  surrounded = direction[4];
-  prob = distanceFromCenter(x, y);
-  chance = rand() % 101;
-
-  tmp = malloc(sizeof(map_t));
-  if(surrounded){
-    from[dim_y] = 1;
-    to[dim_y] = MAP_Y - 2;
-    if(direction[0]){ // if map found north
-      from[dim_x] = world[y - 1][x]->s; // get the south gate from the north map.
-    } else {
-      from[dim_x] = 1 + rand() % (MAP_X - 2);
-    }
-    if(direction[2]){ // if map found south
-      to[dim_x] = world[y + 1][x]->n;
-    } else {
-      to[dim_x] = 1 + rand() % (MAP_X - 2);
-    }
-
-    if(direction[1]){ // if map found east
-      from[dim_y] = world[y][x + 1]->w;
-    } else {
-      from[dim_y] = 1 + rand() % (MAP_Y - 2);
-    }
-    if(direction[3]){ // if map found west
-      to[dim_y] = world[y][x - 1]->e;
-    } else {
-      to[dim_y] = 1 + rand() % (MAP_Y - 2);
-    }
-
-
-    smooth_height(tmp);
-    map_terrain(tmp, from[dim_x], to[dim_x], from[dim_y], to[dim_y]);
-    place_boulders(tmp);
-    place_trees(tmp);
-    build_paths(tmp);
-  } else{
-    new_map(tmp);
-  }
-  if(chance < prob) {
-      place_pokemart(tmp);
-      place_center(tmp);
-    }
-  world[y][x] = tmp;
-}
-
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
   struct timeval tv;
   uint32_t seed;
-  int i, j;
-
-  char command;
-  int quitCommand;
-  map_t* world[401][401];
-  map_t* tmpMap;
-
-  int curX;
-  int curY;
-  int surroundingMaps[5];
-  surroundingMaps[0] = 0;
+  char c;
+  int x, y;
 
   if (argc == 2) {
     seed = atoi(argv[1]);
@@ -850,64 +916,74 @@ int main(int argc, char *argv[]){
 
   printf("Using seed: %u\n", seed);
   srand(seed);
-  for(i = 0; i < 401; i++) {
-    for(j = 0; j < 401; j++) {
-      world[i][j] = NULL;
+
+  init_world();
+
+  do {
+    print_map();  
+    printf("Current position is %d%cx%d%c (%d,%d).  "
+           "Enter command: ",
+           abs(world.cur_idx[dim_x] - (WORLD_SIZE / 2)),
+           world.cur_idx[dim_x] - (WORLD_SIZE / 2) >= 0 ? 'E' : 'W',
+           abs(world.cur_idx[dim_y] - (WORLD_SIZE / 2)),
+           world.cur_idx[dim_y] - (WORLD_SIZE / 2) <= 0 ? 'N' : 'S',
+           world.cur_idx[dim_x] - (WORLD_SIZE / 2),
+           world.cur_idx[dim_y] - (WORLD_SIZE / 2));
+    if (scanf(" %c", &c) != 1) {
+      /* To handle EOF */
+      putchar('\n');
+      break;
     }
-  }
-
-  curX = 200;
-  curY = 200;
-
-  tmpMap = malloc(sizeof(map_t));
-  new_map(tmpMap);
-  place_pokemart(tmpMap);
-  place_center(tmpMap);
-  print_map(tmpMap);
-  world[curY][curX] = tmpMap; // set the center as the first generated map.
-  printf("<%d, %d>\n", curX - 200, curY - 200);
-
-  command = '.';
-  quitCommand = 0;
-  while(command != 'q'){
-    scanf(" %c", &command);
-    switch(command) {
-      case 'q':
-        quitCommand = 1;
-        destroyWorld(world);
-        break;
-      case 'n':
-        curY--;
-        if(curY < 0) curY++;
-        break;
-      case 's': 
-        curY++;
-        if(curY > 400) curY--;
-        break;
-      case 'e':
-        curX++;
-        if(curX > 400) curX--;
-        break;
-      case 'w':
-        curX--;
-        if(curX < 0) curX++;
-        break;
-      case 'f':
-        scanf(" %d %d", &curX, &curY);
-        curX = curX + 200;
-        curY = curY + 200;
-        break;
-      default: printf("Invalid command, type one of the following characters: n, e, s, w, f, q\n");
+    switch (c) {
+    case 'n':
+      if (world.cur_idx[dim_y]) {
+        world.cur_idx[dim_y]--;
+        new_map();
+      }
+      break;
+    case 's':
+      if (world.cur_idx[dim_y] < WORLD_SIZE - 1) {
+        world.cur_idx[dim_y]++;
+        new_map();
+      }
+      break;
+    case 'e':
+      if (world.cur_idx[dim_x] < WORLD_SIZE - 1) {
+        world.cur_idx[dim_x]++;
+        new_map();
+      }
+      break;
+    case 'w':
+      if (world.cur_idx[dim_x]) {
+        world.cur_idx[dim_x]--;
+        new_map();
+      }
+      break;
+    case 'q':
+      break;
+    case 'f':
+      scanf(" %d %d", &x, &y);
+      if (x >= -(WORLD_SIZE / 2) && x <= WORLD_SIZE / 2 &&
+          y >= -(WORLD_SIZE / 2) && y <= WORLD_SIZE / 2) {
+        world.cur_idx[dim_x] = x + (WORLD_SIZE / 2);
+        world.cur_idx[dim_y] = y + (WORLD_SIZE / 2);
+        new_map();
+      }
+      break;
+    case '?':
+    case 'h':
+      printf("Move with 'e'ast, 'w'est, 'n'orth, 's'outh or 'f'ly x y.\n"
+             "Quit with 'q'.  '?' and 'h' print this help message.\n");
+      break;
+    default:
+      fprintf(stderr, "%c: Invalid input.  Enter '?' for help.\n", c);
+      break;
     }
-    if(quitCommand) break;
+  } while (c != 'q');
 
-    findSurroundingMaps(surroundingMaps, curX, curY, world);
-    
-    if(world[curY][curX] == NULL) {
-      generateMap(curX, curY, surroundingMaps, world);
-    }
-    print_map(world[curY][curX]);
-    printf("<%d, %d>\n", curX - 200, curY - 200);
-  }
+  delete_world();
+
+  printf("But how are you going to be the very best if you quit?\n");
+  
   return 0;
 }
