@@ -92,6 +92,224 @@ static int32_t edge_penalty(int8_t x, int8_t y)
   return (x == 1 || y == 1 || x == MAP_X - 2 || y == MAP_Y - 2) ? 2 : 1;
 }
 
+static int dijkstra_npc(map_t *m, pair_t from, pair_t to, int costArr[]) {
+  int total = 0;
+  int terCost = 0;
+  //Note: edge penalty should be removed from implementation of djikstra_path for this use case.
+  static path_t path[MAP_Y][MAP_X], *p;
+  static uint32_t initialized = 0;
+  heap_t h;
+  uint32_t x, y;
+
+  if(m->map[from[dim_y]][from[dim_x]] == ter_boulder) {
+      terCost = costArr[0];
+    } else if(m->map[from[dim_y]][from[dim_x]] == ter_tree) {
+      terCost = costArr[1];
+    }else if(m->map[from[dim_y]][from[dim_x]] == ter_path) {
+      terCost = costArr[2];
+    }else if(m->map[from[dim_y]][from[dim_x]] == ter_mart) {
+      terCost = costArr[3];
+    }else if(m->map[from[dim_y]][from[dim_x]] == ter_center) {
+      terCost = costArr[4];
+    }else if(m->map[from[dim_y]][from[dim_x]] == ter_grass) {
+      terCost = costArr[5];
+    }else if(m->map[from[dim_y]][from[dim_x]] == ter_clearing) {
+      terCost = costArr[6];
+    }else if(m->map[from[dim_y]][from[dim_x]] == ter_mountain) {
+      terCost = costArr[7];
+    }else if(m->map[from[dim_y]][from[dim_x]] == ter_forest) {
+      terCost = costArr[8];
+    }else if(m->map[from[dim_y]][from[dim_x]] == ter_water) {
+      terCost = costArr[9];
+    }else if(m->map[from[dim_y]][from[dim_x]] == ter_gate) {
+      terCost = costArr[10];
+    } else if(m->map[from[dim_y]][from[dim_x]] == npc_player) {
+      printf("At player location: %d, %d\n", p->pos[dim_y], p->pos[dim_x]);
+    }
+  if(terCost == INT_MAX){
+    printf("starting on an invalid (MAX_INT) position [%d, %d]\n", from[dim_y], from[dim_x]);
+    return -1;
+  }
+
+
+  if (!initialized) {
+    for (y = 0; y < MAP_Y; y++) {
+      for (x = 0; x < MAP_X; x++) {
+        path[y][x].pos[dim_y] = y;
+        path[y][x].pos[dim_x] = x;
+      }
+    }
+    initialized = 1;
+  }
+  
+  for (y = 0; y < MAP_Y; y++) {
+    for (x = 0; x < MAP_X; x++) {
+      path[y][x].cost = INT_MAX;
+    }
+  }
+
+  path[from[dim_y]][from[dim_x]].cost = 0;
+
+  heap_init(&h, path_cmp, NULL);
+  for (y = 1; y < MAP_Y - 1; y++) {
+    for (x = 1; x < MAP_X - 1; x++) {
+      path[y][x].hn = heap_insert(&h, &path[y][x]);
+    }
+  }
+  printf("journey: (%d, %d)->(%d, %d)\n", from[dim_x], from[dim_y], to[dim_x], to[dim_y]);
+  while ((p = heap_remove_min(&h))) {
+    p->hn = NULL;
+    //printf("%d, %d\n", p->pos[dim_y], p->pos[dim_x]);
+    if ((p->pos[dim_y] == to[dim_y]) && p->pos[dim_x] == to[dim_x]) {
+      total = path[p -> pos[dim_y]][p -> pos[dim_x]].cost;// ??
+      printf("PC found! %d\n", total);
+      /**
+      for (x = to[dim_x], y = to[dim_y];
+           (x != from[dim_x]) || (y != from[dim_y]);
+           p = &path[y][x], x = p->from[dim_x], y = p->from[dim_y]) {
+        mapxy(x, y) = ter_path;// defeinitely don't think I need later..
+      }
+      **/
+      //printf("destroying heap node\n");
+      heap_delete(&h);
+      return total; // return total?
+    }
+    if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_boulder) {
+      terCost = costArr[0];
+    } else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_tree) {
+      terCost = costArr[1];
+    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_path) {
+      terCost = costArr[2];
+    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_mart) {
+      terCost = costArr[3];
+    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_center) {
+      terCost = costArr[4];
+    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_grass) {
+      terCost = costArr[5];
+    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_clearing) {
+      terCost = costArr[6];
+    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_mountain) {
+      terCost = costArr[7];
+    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_forest) {
+      terCost = costArr[8];
+    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_water) {
+      terCost = costArr[9];
+    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_gate) {
+      terCost = costArr[10];
+    } else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == npc_player) {
+      printf("At player location: %d, %d\n", p->pos[dim_y], p->pos[dim_x]);
+    }
+    else {
+      printf("Unrecognized type of obstacle... PC x, y: %d, %d\n", to[dim_x], to[dim_y]);
+    }
+    if ((path[p->pos[dim_y] - 1][p->pos[dim_x]    ].hn) &&
+        (path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost > ((p->cost + terCost)))) {
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost = ((p->cost + terCost));
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1][p->pos[dim_x]    ].hn);
+    }
+    if ((path[p->pos[dim_y]    ][p->pos[dim_x] - 1].hn) &&
+        (path[p->pos[dim_y]    ][p->pos[dim_x] - 1].cost > ((p->cost + terCost)))) {
+      path[p->pos[dim_y]][p->pos[dim_x] - 1].cost = ((p->cost + terCost));
+      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ][p->pos[dim_x] - 1].hn);
+    }
+    if ((path[p->pos[dim_y]    ][p->pos[dim_x] + 1].hn) &&
+        (path[p->pos[dim_y]    ][p->pos[dim_x] + 1].cost > ((p->cost + terCost)))) {
+      path[p->pos[dim_y]][p->pos[dim_x] + 1].cost = ((p->cost + terCost));
+      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ][p->pos[dim_x] + 1].hn);
+    }
+    if ((path[p->pos[dim_y] + 1][p->pos[dim_x]    ].hn) &&
+        (path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost > ((p->cost + terCost)))) {
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost = ((p->cost + terCost));
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1][p->pos[dim_x]    ].hn);
+    }
+    //printf("??\n");
+  }
+  return total;
+}
+
+static int revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[]) {
+  static path_t path[MAP_Y][MAP_X], *p;
+  static uint32_t initialized = 0;
+  heap_t h;
+  uint32_t x, y;
+
+  if (!initialized) {
+    for (y = 0; y < MAP_Y; y++) {
+      for (x = 0; x < MAP_X; x++) {
+        path[y][x].pos[dim_y] = y;
+        path[y][x].pos[dim_x] = x;
+      }
+    }
+    initialized = 1;
+  }
+  
+  for (y = 0; y < MAP_Y; y++) {
+    for (x = 0; x < MAP_X; x++) {
+      path[y][x].cost = INT_MAX;
+    }
+  }
+
+  path[from[dim_y]][from[dim_x]].cost = 0;
+
+  heap_init(&h, path_cmp, NULL);
+
+  for (y = 1; y < MAP_Y - 1; y++) {
+    for (x = 1; x < MAP_X - 1; x++) {
+      path[y][x].hn = heap_insert(&h, &path[y][x]);
+    }
+  }
+  while ((p = heap_remove_min(&h))) {
+    p->hn = NULL;
+
+    if ((p->pos[dim_y] == to[dim_y]) && p->pos[dim_x] == to[dim_x]) {
+      heap_delete(&h);
+      return p->cost;
+    }
+
+    if ((path[p->pos[dim_y] - 1][p->pos[dim_x]    ].hn) &&
+        (path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost > p->cost + 5)) {
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost = p->cost + 5;
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
+                                           [p->pos[dim_x]    ].hn);
+    }
+    if ((path[p->pos[dim_y]    ][p->pos[dim_x] - 1].hn) &&
+        (path[p->pos[dim_y]    ][p->pos[dim_x] - 1].cost > p->cost + 5)) {
+      path[p->pos[dim_y]][p->pos[dim_x] - 1].cost = p->cost + 5;
+      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ]
+                                           [p->pos[dim_x] - 1].hn);
+    }
+    if ((path[p->pos[dim_y]    ][p->pos[dim_x] + 1].hn) &&
+        (path[p->pos[dim_y]    ][p->pos[dim_x] + 1].cost > p->cost + 5)) {
+      path[p->pos[dim_y]][p->pos[dim_x] + 1].cost = p->cost + 5;
+      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ]
+                                           [p->pos[dim_x] + 1].hn);
+    }
+    if ((path[p->pos[dim_y] + 1][p->pos[dim_x]    ].hn) &&
+        (path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost > p->cost + 5)) {
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost = p->cost + 5;
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
+                                           [p->pos[dim_x]    ].hn);
+    }
+  }
+  return -1;
+}
+
 static void dijkstra_path(map_t *m, pair_t from, pair_t to)
 {
   static path_t path[MAP_Y][MAP_X], *p;
@@ -776,85 +994,42 @@ static main_pc* generatePC(map_t* m) {
   pc = malloc(sizeof(main_pc));
 
   curX = curY = 15;
-  while(m->map[curX][curY] != ter_path) { // generate PC
-    curX = (rand() % 19) + 1; // 1 - 19
-    curY = (rand() % 78) + 1; // 1 - 78
+  while(m->map[curY][curX] != ter_path) { // generate PC
+    curX = rand() % (MAP_X - 2) + 1; // 1-79
+    curY = rand() % (MAP_Y - 2) + 1; // 1-19
   }
-  m->map[curX][curY] = npc_player; // set current location to PC
+  m->map[curY][curX] = npc_player; // set current location to PC
   pc->x = curX;
   pc->y = curY;
-
   return pc;
 }
 
-// New map expects cur_idx to refer to the index to be generated.  If that
-// map has already been generated then the only thing this does is set
-// cur_map.
-static int new_map()
-{
-  int d, p;
-  int e, w, n, s;
-  main_pc* pc;
+static void calcNpcCost(map_t* m, main_pc* pc) {
+  int i, j, cost;
+  pair_t npcPair, pcPair;
+  int hikerCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 15, 10, 15, 15, INT_MAX, INT_MAX};
+  int rivalCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 20, 10, INT_MAX, INT_MAX, INT_MAX, INT_MAX};
+  //rivalCost[0]= hikerCost[0];
+  pcPair[dim_x] = pc->x; // e->w
+  pcPair[dim_y] = pc->y; // n->s
+  cost = 0;
+  printf("looping\n");
+  for(i = 0; i < MAP_Y; i++) {
+    for(j = 0; j < MAP_X; j++) {
+      npcPair[dim_y] = i;
+      npcPair[dim_x] = j;
 
-  if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]]) {
-    world.cur_map = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]];
-    return 0;
+      //printf("npc Time\n");
+      cost = revised_dijk_npc(m, npcPair, pcPair, hikerCost);
+      //printf("npc...\n");
+      //cost = revised_dijk_npc(m, npcPair, pcPair, hikerCost); // malloc error occurs when they are on INT_MAX cost spaces
+      //printf("completed! %d\n", cost);
+    }
   }
-
-  world.cur_map                                             =
-    world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]] =
-    malloc(sizeof (*world.cur_map));
-
-  smooth_height(world.cur_map);
-  
-  if (!world.cur_idx[dim_y]) {
-    n = -1;
-  } else if (world.world[world.cur_idx[dim_y] - 1][world.cur_idx[dim_x]]) {
-    n = world.world[world.cur_idx[dim_y] - 1][world.cur_idx[dim_x]]->s;
-  } else {
-    n = 1 + rand() % (MAP_X - 2);
-  }
-  if (world.cur_idx[dim_y] == WORLD_SIZE - 1) {
-    s = -1;
-  } else if (world.world[world.cur_idx[dim_y] + 1][world.cur_idx[dim_x]]) {
-    s = world.world[world.cur_idx[dim_y] + 1][world.cur_idx[dim_x]]->n;
-  } else  {
-    s = 1 + rand() % (MAP_X - 2);
-  }
-  if (!world.cur_idx[dim_x]) {
-    w = -1;
-  } else if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] - 1]) {
-    w = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] - 1]->e;
-  } else {
-    w = 1 + rand() % (MAP_Y - 2);
-  }
-  if (world.cur_idx[dim_x] == WORLD_SIZE - 1) {
-    e = -1;
-  } else if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] + 1]) {
-    e = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] + 1]->w;
-  } else {
-    e = 1 + rand() % (MAP_Y - 2);
-  }
-  
-  map_terrain(world.cur_map, n, s, e, w);
-     
-  place_boulders(world.cur_map);
-  place_trees(world.cur_map);
-  build_paths(world.cur_map);
-  d = (abs(world.cur_idx[dim_x] - (WORLD_SIZE / 2)) +
-       abs(world.cur_idx[dim_y] - (WORLD_SIZE / 2)));
-  p = d > 200 ? 5 : (50 - ((45 * d) / 200));
-  //  printf("d=%d, p=%d\n", d, p);
-  if ((rand() % 100) < p || !d) {
-    place_pokemart(world.cur_map);
-  }
-  if ((rand() % 100) < p || !d) {
-    place_center(world.cur_map);
-  }
-  pc = generatePC(world.cur_map);
-  
-  return 0;
+  printf("calculated cost...\n");
+  return;
 }
+
 
 static void print_map()
 {
@@ -907,6 +1082,75 @@ static void print_map()
   if (default_reached) {
     fprintf(stderr, "Default reached in %s\n", __FUNCTION__);
   }
+}
+
+// New map expects cur_idx to refer to the index to be generated.  If that
+// map has already been generated then the only thing this does is set
+// cur_map.
+static int new_map()
+{
+  int d, p;
+  int e, w, n, s;
+  main_pc* pc;
+
+  if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]]) {
+    world.cur_map = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]];
+    return 0;
+  }
+
+  world.cur_map = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]] =
+    malloc(sizeof (*world.cur_map));
+
+  smooth_height(world.cur_map);
+  
+  if (!world.cur_idx[dim_y]) {
+    n = -1;
+  } else if (world.world[world.cur_idx[dim_y] - 1][world.cur_idx[dim_x]]) {
+    n = world.world[world.cur_idx[dim_y] - 1][world.cur_idx[dim_x]]->s;
+  } else {
+    n = 1 + rand() % (MAP_X - 2);
+  }
+  if (world.cur_idx[dim_y] == WORLD_SIZE - 1) {
+    s = -1;
+  } else if (world.world[world.cur_idx[dim_y] + 1][world.cur_idx[dim_x]]) {
+    s = world.world[world.cur_idx[dim_y] + 1][world.cur_idx[dim_x]]->n;
+  } else  {
+    s = 1 + rand() % (MAP_X - 2);
+  }
+  if (!world.cur_idx[dim_x]) {
+    w = -1;
+  } else if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] - 1]) {
+    w = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] - 1]->e;
+  } else {
+    w = 1 + rand() % (MAP_Y - 2);
+  }
+  if (world.cur_idx[dim_x] == WORLD_SIZE - 1) {
+    e = -1;
+  } else if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] + 1]) {
+    e = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x] + 1]->w;
+  } else {
+    e = 1 + rand() % (MAP_Y - 2);
+  }
+  
+  map_terrain(world.cur_map, n, s, e, w);
+     
+  place_boulders(world.cur_map);
+  place_trees(world.cur_map);
+  build_paths(world.cur_map);
+  d = (abs(world.cur_idx[dim_x] - (WORLD_SIZE / 2)) +
+       abs(world.cur_idx[dim_y] - (WORLD_SIZE / 2)));
+  p = d > 200 ? 5 : (50 - ((45 * d) / 200));
+  //  printf("d=%d, p=%d\n", d, p);
+  if ((rand() % 100) < p || !d) {
+    place_pokemart(world.cur_map);
+  }
+  if ((rand() % 100) < p || !d) {
+    place_center(world.cur_map);
+  }
+  pc = generatePC(world.cur_map);
+  printf("PC Location %d, %d\n", pc->x, pc->y);
+  calcNpcCost(world.cur_map, pc);
+  return 0;
 }
 
 // The world is global because of its size, so init_world is parameterless
