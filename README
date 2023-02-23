@@ -1,8 +1,8 @@
-Assignment1.02 generates a total world of 401x401 maps.
+Assignment1.03 generates a PC, and the cost maps for 2 NPC's, rival and hiker.
 
 Structures include map_t and queue_node_t
-The assignment allows for a variety of movements between maps, fed by the 
-console. 
+This assignment performs Dijkstras to find the cost of traversing a path to the PC, 
+this is then repeated for all coordinates in the map to generate a cost map. 
 
 Compile using make. 
 Author: Joseph Jennings (jtj9)
