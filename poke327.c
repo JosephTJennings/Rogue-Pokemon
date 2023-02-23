@@ -97,8 +97,21 @@ static int32_t revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[])
   static uint32_t initialized = 0;
   heap_t h;
   uint32_t x, y;
-  int32_t terCost;
-  int32_t retCost;
+  int32_t terCost = 0;
+  int32_t retCost = 0;
+
+  if(m->map[from[dim_y]][from[dim_x]] == ter_boulder) {terCost = costArr[0];
+  }else if(m->map[from[dim_y]][from[dim_x]] == ter_tree) {terCost = costArr[1];
+  }else if(m->map[from[dim_y]][from[dim_x]] == ter_path) {terCost = costArr[2];
+  }else if(m->map[from[dim_y]][from[dim_x]] == ter_mart) {terCost = costArr[3];
+  }else if(m->map[from[dim_y]][from[dim_x]] == ter_center) {terCost = costArr[4];
+  }else if(m->map[from[dim_y]][from[dim_x]] == ter_grass) {terCost = costArr[5];
+  }else if(m->map[from[dim_y]][from[dim_x]] == ter_clearing) {terCost = costArr[6];
+  }else if(m->map[from[dim_y]][from[dim_x]] == ter_mountain) {terCost = costArr[7];
+  }else if(m->map[from[dim_y]][from[dim_x]] == ter_forest) {terCost = costArr[8];
+  }else if(m->map[from[dim_y]][from[dim_x]] == ter_water) {terCost = costArr[9];
+  }else if(m->map[from[dim_y]][from[dim_x]] == ter_gate) {terCost = costArr[10];
+  }else if(m->map[from[dim_y]][from[dim_x]] == npc_player) {terCost = 0;}
 
   if (!initialized) {
     for (y = 0; y < MAP_Y; y++) {
@@ -187,9 +200,14 @@ static int32_t revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[])
       heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
                                            [p->pos[dim_x]    ].hn);
     }
-  }
-  if(p->cost == INT_MAX) {
-    return p->cost;
+    if (p->cost != INT_MAX && (path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].hn) &&
+        (path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].cost > p->cost + terCost)) {
+      path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].cost = p->cost + terCost;
+      path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
+                                           [p->pos[dim_x] + 1].hn);
+    }
   }
   return -1;
 }
@@ -892,7 +910,11 @@ static void print_costMap(int32_t costMap[21][80]){
   int i, j;
   for(i = 0; i < MAP_Y; i++) {
     for(j = 0; j < MAP_X; j++) {
-        printf("%4d", costMap[i][j] % 1000);
+        if(costMap[i][j] == INT_MAX){
+          printf("%4s", " ");
+        } else {
+          printf("%4d", costMap[i][j] % 1000);
+        }
     }
     printf("\n");
   }
