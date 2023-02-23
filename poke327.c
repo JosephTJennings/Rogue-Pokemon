@@ -200,6 +200,8 @@ static int32_t revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[])
       heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
                                            [p->pos[dim_x]    ].hn);
     }
+
+    //diagonal
     if (p->cost != INT_MAX && (path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].hn) &&
         (path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].cost > p->cost + terCost)) {
       path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].cost = p->cost + terCost;
@@ -207,6 +209,30 @@ static int32_t revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[])
       path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
       heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
                                            [p->pos[dim_x] + 1].hn);
+    }
+    if (p->cost != INT_MAX && (path[p->pos[dim_y] + 1][p->pos[dim_x] - 1].hn) &&
+        (path[p->pos[dim_y] + 1][p->pos[dim_x] - 1].cost > p->cost + terCost)) {
+      path[p->pos[dim_y] + 1][p->pos[dim_x] - 1].cost = p->cost + terCost;
+      path[p->pos[dim_y] + 1][p->pos[dim_x] - 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] + 1][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
+                                           [p->pos[dim_x] - 1].hn);
+    }
+    if (p->cost != INT_MAX && (path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].hn) &&
+        (path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].cost > p->cost + terCost)) {
+      path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].cost = p->cost + terCost;
+      path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
+                                           [p->pos[dim_x] + 1].hn);
+    }
+    if (p->cost != INT_MAX && (path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].hn) &&
+        (path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].cost > p->cost + terCost)) {
+      path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].cost = p->cost + terCost;
+      path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].from[dim_y] = p->pos[dim_y];
+      path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
+      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
+                                           [p->pos[dim_x] - 1].hn);
     }
   }
   return -1;
@@ -913,7 +939,7 @@ static void print_costMap(int32_t costMap[21][80]){
         if(costMap[i][j] == INT_MAX){
           printf("%4s", " ");
         } else {
-          printf("%4d", costMap[i][j] % 1000);
+          printf("%4d", costMap[i][j] % 100);
         }
     }
     printf("\n");
@@ -931,7 +957,6 @@ static void calcNpcCost(map_t* m, main_pc* pc) {
   pcPair[dim_x] = pc->x; // e->w
   pcPair[dim_y] = pc->y; // n->s
   cost = 0;
-  printf("looping\n");
   for(i = 0; i < MAP_Y; i++) {
     for(j = 0; j < MAP_X; j++) {
       npcPair[dim_y] = i;
