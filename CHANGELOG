@@ -1,3 +1,75 @@
+commit 91dd1fc38532075a53229652457bea5cc294419d
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 22 23:52:31 2023 -0600
+
+    masked int_max in output, started to add diagonal pattern
+
+commit ba4e87adae5e080b3134e4787df469a60006bf66
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 22 23:00:08 2023 -0600
+
+    changed README and added rival cost map
+
+commit ec45f29ceb2779c679c9a7e94cd2251df14ad48a
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 22 13:55:42 2023 -0600
+
+    Added VSCode debugging files...
+
+commit e3a8713f433e1bdf24e633a2ce00ca1c207cc6a3
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 22 13:54:44 2023 -0600
+
+    Dijkstras fixed and implemented properly.
+
+commit 876e14b70365dc820f0f65ba400c3b63dc5cdde6
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 22 13:33:36 2023 -0600
+
+    Fixed minor x,y coord swaps. Began dijkstra implementation.
+
+commit feeec7127ce8fac79fc50c77f06003e8d8c9c7d7
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Mon Feb 20 22:54:22 2023 -0600
+
+    Added struct for PC and changed function to only generate PC.
+
+commit 85b4841647ef0bec097c85ba96b78ee165eba6d8
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Mon Feb 20 22:39:27 2023 -0600
+
+    Added generation of PC.
+
+commit f996fb13214fe9d0ceb3015bb9a21d500903ddac
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Mon Feb 20 19:21:44 2023 -0600
+
+    Merged with Schaefers code.
+
+commit 08178ed0b03bcb4fa679c4f98d0f27e6e5db3705
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 8 22:17:14 2023 -0600
+
+    Fix typo.
+
+commit c1faee8314263535f0ba20fe75f627b8605c9e4c
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 8 22:16:36 2023 -0600
+
+    Test if this fixes pyrite.
+
+commit cdb02c3042afcc4846be9776a22ee8237f55a261
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 8 21:59:46 2023 -0600
+
+    Minor change
+
+commit 33058260cbcb55a6ed2d1ba1988a960312e1ace0
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 8 21:58:07 2023 -0600
+
+    Added change log and removed a print.
+
 commit 3a61c2a8429ceff28280eb0a88b266dde89bb646
 Author: josephTJennings <josephjenningsct@gmail.com>
 Date:   Wed Feb 8 21:31:09 2023 -0600
