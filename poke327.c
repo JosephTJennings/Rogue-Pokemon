@@ -158,12 +158,8 @@ static int32_t revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[])
 
     //printf("pcost: %d\n", p->cost);
 
-    if (terCost == INT_MAX ||((p->pos[dim_y] == to[dim_y]) && p->pos[dim_x] == to[dim_x])) {
+    if (terCost == INT_MAX || ((p->pos[dim_y] == to[dim_y]) && p->pos[dim_x] == to[dim_x])) {
       heap_delete(&h);
-      if(terCost == INT_MAX){
-        p->cost = INT_MAX;
-      }
-      //printf("%d\n", p->cost);
       retCost = p->cost;
       return retCost;
     }
