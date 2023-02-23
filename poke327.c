@@ -92,6 +92,23 @@ static int32_t edge_penalty(int8_t x, int8_t y)
   return (x == 1 || y == 1 || x == MAP_X - 2 || y == MAP_Y - 2) ? 2 : 1;
 }
 
+static int32_t getTerCost(map_t* m, int x, int y, int costArr[]) {
+  int32_t terCost = 0;
+  if(m->map[y][x] == ter_boulder) {terCost = costArr[0];
+  }else if(m->map[y][x] == ter_tree) {terCost = costArr[1];
+  }else if(m->map[y][x] == ter_path) {terCost = costArr[2];
+  }else if(m->map[y][x] == ter_mart) {terCost = costArr[3];
+  }else if(m->map[y][x] == ter_center) {terCost = costArr[4];
+  }else if(m->map[y][x] == ter_grass) {terCost = costArr[5];
+  }else if(m->map[y][x] == ter_clearing) {terCost = costArr[6];
+  }else if(m->map[y][x] == ter_mountain) {terCost = costArr[7];
+  }else if(m->map[y][x] == ter_forest) {terCost = costArr[8];
+  }else if(m->map[y][x] == ter_water) {terCost = costArr[9];
+  }else if(m->map[y][x] == ter_gate) {terCost = costArr[10];
+  }else if(m->map[y][x] == npc_player) {terCost = 0;}
+  return terCost;
+}
+
 static int32_t revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[]) {
   static path_t path[MAP_Y][MAP_X], *p;
   static uint32_t initialized = 0;
@@ -100,18 +117,7 @@ static int32_t revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[])
   int32_t terCost = 0;
   int32_t retCost = 0;
 
-  if(m->map[from[dim_y]][from[dim_x]] == ter_boulder) {terCost = costArr[0];
-  }else if(m->map[from[dim_y]][from[dim_x]] == ter_tree) {terCost = costArr[1];
-  }else if(m->map[from[dim_y]][from[dim_x]] == ter_path) {terCost = costArr[2];
-  }else if(m->map[from[dim_y]][from[dim_x]] == ter_mart) {terCost = costArr[3];
-  }else if(m->map[from[dim_y]][from[dim_x]] == ter_center) {terCost = costArr[4];
-  }else if(m->map[from[dim_y]][from[dim_x]] == ter_grass) {terCost = costArr[5];
-  }else if(m->map[from[dim_y]][from[dim_x]] == ter_clearing) {terCost = costArr[6];
-  }else if(m->map[from[dim_y]][from[dim_x]] == ter_mountain) {terCost = costArr[7];
-  }else if(m->map[from[dim_y]][from[dim_x]] == ter_forest) {terCost = costArr[8];
-  }else if(m->map[from[dim_y]][from[dim_x]] == ter_water) {terCost = costArr[9];
-  }else if(m->map[from[dim_y]][from[dim_x]] == ter_gate) {terCost = costArr[10];
-  }else if(m->map[from[dim_y]][from[dim_x]] == npc_player) {terCost = 0;}
+  terCost = getTerCost(m, from[dim_x], from[dim_y], costArr);
 
   if (!initialized) {
     for (y = 0; y < MAP_Y; y++) {
@@ -143,23 +149,11 @@ static int32_t revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[])
 
     retCost = 0;
     terCost = 0;
-    if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_boulder) {terCost = costArr[0];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_tree) {terCost = costArr[1];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_path) {terCost = costArr[2];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_mart) {terCost = costArr[3];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_center) {terCost = costArr[4];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_grass) {terCost = costArr[5];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_clearing) {terCost = costArr[6];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_mountain) {terCost = costArr[7];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_forest) {terCost = costArr[8];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_water) {terCost = costArr[9];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == ter_gate) {terCost = costArr[10];
-    }else if(m->map[p->pos[dim_y]][p->pos[dim_x]] == npc_player) {terCost = 0;}
-
-    //printf("pcost: %d\n", p->cost);
+    terCost = getTerCost(m, p->pos[dim_x], p->pos[dim_y], costArr);
 
     if (terCost == INT_MAX || ((p->pos[dim_y] == to[dim_y]) && p->pos[dim_x] == to[dim_x])) {
       heap_delete(&h);
+      if(p->cost == 0) return INT_MAX;
       retCost = p->cost;
       return retCost;
     }
@@ -229,6 +223,10 @@ static int32_t revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[])
       path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
       heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
                                            [p->pos[dim_x] - 1].hn);
+    }
+    if(p->cost == INT_MAX) {
+      heap_delete(&h);
+      return INT_MAX;
     }
   }
   return -1;
@@ -935,7 +933,7 @@ static void print_costMap(int32_t costMap[21][80]){
         if(costMap[i][j] == INT_MAX){
           printf("%4s", " ");
         } else {
-          printf("%4d", costMap[i][j] % 100);
+          printf("%4d", costMap[i][j] % 1000);
         }
     }
     printf("\n");
