@@ -37,13 +37,25 @@ typedef int16_t pair_t[num_dims];
 #define BOULDER_PROB       95
 #define WORLD_SIZE         401
 
+#define MOUNTAIN_SYMBOL       '%'
+#define BOULDER_SYMBOL        '0'
+#define TREE_SYMBOL           '4'
+#define FOREST_SYMBOL         '^'
+#define GATE_SYMBOL           '#'
+#define PATH_SYMBOL           '#'
+#define POKEMART_SYMBOL       'M'
+#define POKEMON_CENTER_SYMBOL 'C'
+#define TALL_GRASS_SYMBOL     ':'
+#define SHORT_GRASS_SYMBOL    '.'
+#define WATER_SYMBOL          '~'
+#define ERROR_SYMBOL          '&'
+
 #define mappair(pair) (m->map[pair[dim_y]][pair[dim_x]])
 #define mapxy(x, y) (m->map[y][x])
 #define heightpair(pair) (m->height[pair[dim_y]][pair[dim_x]])
 #define heightxy(x, y) (m->height[y][x])
 
 typedef enum __attribute__ ((__packed__)) terrain_type {
-  ter_debug,
   ter_boulder,
   ter_tree,
   ter_path,
@@ -55,8 +67,22 @@ typedef enum __attribute__ ((__packed__)) terrain_type {
   ter_forest,
   ter_water,
   ter_gate,
-  npc_player
+  num_terrain_types,
+  ter_debug
 } terrain_type_t;
+
+typedef enum __attribute__ ((__packed__)) character_type {
+  char_pc,
+  char_hiker,
+  char_rival,
+  char_swimmer,
+  char_other,
+  num_character_types
+} character_type_t;
+
+typedef struct pc {
+  pair_t pos;
+} pc_t;
 
 typedef struct map {
   terrain_type_t map[MAP_Y][MAP_X];
@@ -73,15 +99,27 @@ typedef struct world {
   map_t *world[WORLD_SIZE][WORLD_SIZE];
   pair_t cur_idx;
   map_t *cur_map;
+  /* Please distance maps in world, not map, since *
+   * we only need one pair at any given time.      */
+  int hiker_dist[MAP_Y][MAP_X];
+  int rival_dist[MAP_Y][MAP_X];
+  pc_t pc;
 } world_t;
-typedef struct player {
-  int x;
-  int y;
-}main_pc;
 
 /* Even unallocated, a WORLD_SIZE x WORLD_SIZE array of pointers is a very *
  * large thing to put on the stack.  To avoid that, world is a global.     */
 world_t world;
+
+/* Just to make the following table fit in 80 columns */
+#define IM INT_MAX
+int32_t move_cost[num_character_types][num_terrain_types] = {
+//  boulder,tree,path,mart,center,grass,clearing,mountain,forest,water,gate
+  { IM, IM, 10, 10, 10, 20, 10, IM, IM, IM, 10 },
+  { IM, IM, 10, 50, 50, 15, 10, 15, 15, IM, IM },
+  { IM, IM, 10, 50, 50, 20, 10, IM, IM, IM, IM },
+  { IM, IM, IM, IM, IM, IM, IM, IM, IM,  7, IM },
+};
+#undef IM
 
 static int32_t path_cmp(const void *key, const void *with) {
   return ((path_t *) key)->cost - ((path_t *) with)->cost;
@@ -90,146 +128,6 @@ static int32_t path_cmp(const void *key, const void *with) {
 static int32_t edge_penalty(int8_t x, int8_t y)
 {
   return (x == 1 || y == 1 || x == MAP_X - 2 || y == MAP_Y - 2) ? 2 : 1;
-}
-
-static int32_t getTerCost(map_t* m, int x, int y, int costArr[]) {
-  int32_t terCost = 0;
-  if(m->map[y][x] == ter_boulder) {terCost = costArr[0];
-  }else if(m->map[y][x] == ter_tree) {terCost = costArr[1];
-  }else if(m->map[y][x] == ter_path) {terCost = costArr[2];
-  }else if(m->map[y][x] == ter_mart) {terCost = costArr[3];
-  }else if(m->map[y][x] == ter_center) {terCost = costArr[4];
-  }else if(m->map[y][x] == ter_grass) {terCost = costArr[5];
-  }else if(m->map[y][x] == ter_clearing) {terCost = costArr[6];
-  }else if(m->map[y][x] == ter_mountain) {terCost = costArr[7];
-  }else if(m->map[y][x] == ter_forest) {terCost = costArr[8];
-  }else if(m->map[y][x] == ter_water) {terCost = costArr[9];
-  }else if(m->map[y][x] == ter_gate) {terCost = costArr[10];
-  }else if(m->map[y][x] == npc_player) {terCost = 0;}
-  return terCost;
-}
-
-static int32_t revised_dijk_npc(map_t *m, pair_t from, pair_t to, int costArr[]) {
-  static path_t path[MAP_Y][MAP_X], *p;
-  static uint32_t initialized = 0;
-  heap_t h;
-  uint32_t x, y;
-  int32_t terCost = 0;
-  int32_t retCost = 0;
-
-  terCost = getTerCost(m, from[dim_x], from[dim_y], costArr);
-
-  if (!initialized) {
-    for (y = 0; y < MAP_Y; y++) {
-      for (x = 0; x < MAP_X; x++) {
-        path[y][x].pos[dim_y] = y;
-        path[y][x].pos[dim_x] = x;
-      }
-    }
-    initialized = 1;
-  }
-  
-  for (y = 0; y < MAP_Y; y++) {
-    for (x = 0; x < MAP_X; x++) {
-      path[y][x].cost = INT_MAX;
-    }
-  }
-
-  path[from[dim_y]][from[dim_x]].cost = 0;
-
-  heap_init(&h, path_cmp, NULL);
-
-  for (y = 1; y < MAP_Y - 1; y++) {
-    for (x = 1; x < MAP_X - 1; x++) {
-      path[y][x].hn = heap_insert(&h, &path[y][x]);
-    }
-  }
-  while ((p = heap_remove_min(&h))) {
-    p->hn = NULL;
-
-    retCost = 0;
-    terCost = 0;
-    terCost = getTerCost(m, p->pos[dim_x], p->pos[dim_y], costArr);
-
-    if (terCost == INT_MAX || ((p->pos[dim_y] == to[dim_y]) && p->pos[dim_x] == to[dim_x])) {
-      heap_delete(&h);
-      if(p->cost == 0) return INT_MAX;
-      retCost = p->cost;
-      return retCost;
-    }
-
-    if (p->cost != INT_MAX && (path[p->pos[dim_y] - 1][p->pos[dim_x]    ].hn) &&
-        (path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost > p->cost + terCost)) {
-      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].cost = p->cost + terCost;
-      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
-      path[p->pos[dim_y] - 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
-      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
-                                           [p->pos[dim_x]    ].hn);
-    }
-    if (p->cost != INT_MAX && (path[p->pos[dim_y]    ][p->pos[dim_x] - 1].hn) &&
-        (path[p->pos[dim_y]    ][p->pos[dim_x] - 1].cost > p->cost + terCost)) {
-      path[p->pos[dim_y]][p->pos[dim_x] - 1].cost = p->cost + terCost;
-      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_y] = p->pos[dim_y];
-      path[p->pos[dim_y]    ][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
-      heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ]
-                                           [p->pos[dim_x] - 1].hn);
-    }
-    if (p->cost != INT_MAX && (path[p->pos[dim_y]    ][p->pos[dim_x] + 1].hn) &&
-        (path[p->pos[dim_y]    ][p->pos[dim_x] + 1].cost > p->cost + terCost)) {
-      path[p->pos[dim_y]][p->pos[dim_x] + 1].cost = p->cost + terCost;
-      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_y] = p->pos[dim_y];
-      path[p->pos[dim_y]    ][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
-      heap_decrease_key_no_replace(&h, path[p->pos[dim_y]    ]
-                                           [p->pos[dim_x] + 1].hn);
-    }
-    if (p->cost != INT_MAX && (path[p->pos[dim_y] + 1][p->pos[dim_x]    ].hn) &&
-        (path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost > p->cost + terCost)) {
-      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].cost = p->cost + terCost;
-      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_y] = p->pos[dim_y];
-      path[p->pos[dim_y] + 1][p->pos[dim_x]    ].from[dim_x] = p->pos[dim_x];
-      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
-                                           [p->pos[dim_x]    ].hn);
-    }
-
-    //diagonal
-    if (p->cost != INT_MAX && (path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].hn) &&
-        (path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].cost > p->cost + terCost)) {
-      path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].cost = p->cost + terCost;
-      path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].from[dim_y] = p->pos[dim_y];
-      path[p->pos[dim_y] + 1][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
-      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
-                                           [p->pos[dim_x] + 1].hn);
-    }
-    if (p->cost != INT_MAX && (path[p->pos[dim_y] + 1][p->pos[dim_x] - 1].hn) &&
-        (path[p->pos[dim_y] + 1][p->pos[dim_x] - 1].cost > p->cost + terCost)) {
-      path[p->pos[dim_y] + 1][p->pos[dim_x] - 1].cost = p->cost + terCost;
-      path[p->pos[dim_y] + 1][p->pos[dim_x] - 1].from[dim_y] = p->pos[dim_y];
-      path[p->pos[dim_y] + 1][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
-      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] + 1]
-                                           [p->pos[dim_x] - 1].hn);
-    }
-    if (p->cost != INT_MAX && (path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].hn) &&
-        (path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].cost > p->cost + terCost)) {
-      path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].cost = p->cost + terCost;
-      path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].from[dim_y] = p->pos[dim_y];
-      path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].from[dim_x] = p->pos[dim_x];
-      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
-                                           [p->pos[dim_x] + 1].hn);
-    }
-    if (p->cost != INT_MAX && (path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].hn) &&
-        (path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].cost > p->cost + terCost)) {
-      path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].cost = p->cost + terCost;
-      path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].from[dim_y] = p->pos[dim_y];
-      path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].from[dim_x] = p->pos[dim_x];
-      heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
-                                           [p->pos[dim_x] - 1].hn);
-    }
-    if(p->cost == INT_MAX) {
-      heap_delete(&h);
-      return INT_MAX;
-    }
-  }
-  return -1;
 }
 
 static void dijkstra_path(map_t *m, pair_t from, pair_t to)
@@ -907,127 +805,6 @@ static int place_trees(map_t *m)
   return 0;
 }
 
-static main_pc* generatePC(map_t* m) {
-  //int hikerCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 15, 10, 15, 15, INT_MAX, INT_MAX};
-  //int rivalCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 20, 10, INT_MAX, INT_MAX, INT_MAX, INT_MAX};
-  //rivalCost[0]= hikerCost[0];
-  int curX, curY;
-  main_pc* pc;
-  pc = malloc(sizeof(main_pc));
-
-  curX = curY = 15;
-  while(m->map[curY][curX] != ter_path) { // generate PC
-    curX = rand() % (MAP_X - 2) + 1; // 1-79
-    curY = rand() % (MAP_Y - 2) + 1; // 1-19
-  }
-  m->map[curY][curX] = npc_player; // set current location to PC
-  pc->x = curX;
-  pc->y = curY;
-  return pc;
-}
-
-static void print_costMap(int32_t costMap[21][80]){
-  int i, j;
-  for(i = 0; i < MAP_Y; i++) {
-    for(j = 0; j < MAP_X; j++) {
-        if(costMap[i][j] == INT_MAX){
-          printf("%4s", " ");
-        } else {
-          printf("%4d", costMap[i][j] % 1000);
-        }
-    }
-    printf("\n");
-  }
-}
-
-static void calcNpcCost(map_t* m, main_pc* pc) {
-  int i, j;
-  int32_t cost;
-  pair_t npcPair, pcPair;
-  int32_t costMap[21][80];
-  int hikerCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 15, 10, 15, 15, INT_MAX, INT_MAX};
-  int rivalCost[] = {INT_MAX, INT_MAX, 10, 50, 50, 20, 10, INT_MAX, INT_MAX, INT_MAX, INT_MAX};
-  //rivalCost[0]= hikerCost[0];
-  pcPair[dim_x] = pc->x; // e->w
-  pcPair[dim_y] = pc->y; // n->s
-  cost = 0;
-  for(i = 0; i < MAP_Y; i++) {
-    for(j = 0; j < MAP_X; j++) {
-      npcPair[dim_y] = i;
-      npcPair[dim_x] = j;
-      cost = revised_dijk_npc(m, npcPair, pcPair, hikerCost);
-      costMap[i][j] = cost;
-    }
-  }
-  printf("hiker cost map :\n");
-  print_costMap(costMap);
-
-  for(i = 0; i < MAP_Y; i++) {
-    for(j = 0; j < MAP_X; j++) {
-      npcPair[dim_y] = i;
-      npcPair[dim_x] = j;
-      cost = revised_dijk_npc(m, npcPair, pcPair, rivalCost);
-      costMap[i][j] = cost;
-    }
-  }
-  printf("rival cost map :\n");
-  print_costMap(costMap);
-  return;
-}
-
-static void print_map()
-{
-  int x, y;
-  int default_reached = 0;
-
-  printf("\n\n\n");
-
-  for (y = 0; y < MAP_Y; y++) {
-    for (x = 0; x < MAP_X; x++) {
-      switch (world.cur_map->map[y][x]) {
-      case ter_boulder:
-      case ter_mountain:
-        putchar('%');
-        break;
-      case ter_tree:
-      case ter_forest:
-        putchar('^');
-        break;
-      case ter_path:
-      case ter_gate:
-        putchar('#');
-        break;
-      case ter_mart:
-        putchar('M');
-        break;
-      case ter_center:
-        putchar('C');
-        break;
-      case ter_grass:
-        putchar(':');
-        break;
-      case ter_clearing:
-        putchar('.');
-        break;
-      case ter_water:
-        putchar('~');
-        break;
-      case npc_player:
-        putchar('@');
-        break;
-      default:
-        default_reached = 1;
-        break;
-      }
-    }
-    putchar('\n');
-  }
-
-  if (default_reached) {
-    fprintf(stderr, "Default reached in %s\n", __FUNCTION__);
-  }
-}
-
 // New map expects cur_idx to refer to the index to be generated.  If that
 // map has already been generated then the only thing this does is set
 // cur_map.
@@ -1035,14 +812,14 @@ static int new_map()
 {
   int d, p;
   int e, w, n, s;
-  main_pc* pc;
 
   if (world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]]) {
     world.cur_map = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]];
     return 0;
   }
 
-  world.cur_map = world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]] =
+  world.cur_map                                             =
+    world.world[world.cur_idx[dim_y]][world.cur_idx[dim_x]] =
     malloc(sizeof (*world.cur_map));
 
   smooth_height(world.cur_map);
@@ -1091,10 +868,70 @@ static int new_map()
   if ((rand() % 100) < p || !d) {
     place_center(world.cur_map);
   }
-  pc = generatePC(world.cur_map);
-  printf("PC Location %d, %d\n", pc->x, pc->y);
-  calcNpcCost(world.cur_map, pc);
+
   return 0;
+}
+
+static void print_map()
+{
+  int x, y;
+  int default_reached = 0;
+
+  printf("\n\n\n");
+
+  for (y = 0; y < MAP_Y; y++) {
+    for (x = 0; x < MAP_X; x++) {
+      if (world.pc.pos[dim_y] == y &&
+          world.pc.pos[dim_x] == x) {
+        putchar('@');
+      } else {
+        switch (world.cur_map->map[y][x]) {
+        case ter_boulder:
+          putchar(BOULDER_SYMBOL);
+          break;
+        case ter_mountain:
+          putchar(MOUNTAIN_SYMBOL);
+          break;
+        case ter_tree:
+          putchar(TREE_SYMBOL);
+          break;
+        case ter_forest:
+          putchar(FOREST_SYMBOL);
+          break;
+        case ter_path:
+          putchar(PATH_SYMBOL);
+          break;
+        case ter_gate:
+          putchar(GATE_SYMBOL);
+          break;
+        case ter_mart:
+          putchar(POKEMART_SYMBOL);
+          break;
+        case ter_center:
+          putchar(POKEMON_CENTER_SYMBOL);
+          break;
+        case ter_grass:
+          putchar(TALL_GRASS_SYMBOL);
+          break;
+        case ter_clearing:
+          putchar(SHORT_GRASS_SYMBOL);
+          break;
+        case ter_water:
+          putchar(WATER_SYMBOL);
+          break;
+        default:
+          putchar(ERROR_SYMBOL);
+          default_reached = 1;
+          break;
+        }
+      }
+    }
+    putchar('\n');
+  }
+
+  if (default_reached) {
+    fprintf(stderr, "Default reached in %s\n", __FUNCTION__);
+  }
 }
 
 // The world is global because of its size, so init_world is parameterless
@@ -1118,6 +955,286 @@ void delete_world()
   }
 }
 
+#define ter_cost(x, y, c) move_cost[c][m->map[y][x]]
+
+static int32_t hiker_cmp(const void *key, const void *with) {
+  return (world.hiker_dist[((path_t *) key)->pos[dim_y]]
+                          [((path_t *) key)->pos[dim_x]] -
+          world.hiker_dist[((path_t *) with)->pos[dim_y]]
+                          [((path_t *) with)->pos[dim_x]]);
+}
+
+static int32_t rival_cmp(const void *key, const void *with) {
+  return (world.rival_dist[((path_t *) key)->pos[dim_y]]
+                          [((path_t *) key)->pos[dim_x]] -
+          world.rival_dist[((path_t *) with)->pos[dim_y]]
+                          [((path_t *) with)->pos[dim_x]]);
+}
+
+void pathfind(map_t *m)
+{
+  heap_t h;
+  uint32_t x, y;
+  static path_t p[MAP_Y][MAP_X], *c;
+  static uint32_t initialized = 0;
+
+  if (!initialized) {
+    initialized = 1;
+    for (y = 0; y < MAP_Y; y++) {
+      for (x = 0; x < MAP_X; x++) {
+        p[y][x].pos[dim_y] = y;
+        p[y][x].pos[dim_x] = x;
+      }
+    }
+  }
+
+  for (y = 0; y < MAP_Y; y++) {
+    for (x = 0; x < MAP_X; x++) {
+      world.hiker_dist[y][x] = world.rival_dist[y][x] = INT_MAX;
+    }
+  }
+  world.hiker_dist[world.pc.pos[dim_y]][world.pc.pos[dim_x]] = 
+    world.rival_dist[world.pc.pos[dim_y]][world.pc.pos[dim_x]] = 0;
+
+  heap_init(&h, hiker_cmp, NULL);
+
+  for (y = 1; y < MAP_Y - 1; y++) {
+    for (x = 1; x < MAP_X - 1; x++) {
+      if (ter_cost(x, y, char_hiker) != INT_MAX) {
+        p[y][x].hn = heap_insert(&h, &p[y][x]);
+      } else {
+        p[y][x].hn = NULL;
+      }
+    }
+  }
+
+  while ((c = heap_remove_min(&h))) {
+    c->hn = NULL;
+    if ((p[c->pos[dim_y] - 1][c->pos[dim_x] - 1].hn) &&
+        (world.hiker_dist[c->pos[dim_y] - 1][c->pos[dim_x] - 1] >
+         world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker))) {
+      world.hiker_dist[c->pos[dim_y] - 1][c->pos[dim_x] - 1] =
+        world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] - 1][c->pos[dim_x] - 1].hn);
+    }
+    if ((p[c->pos[dim_y] - 1][c->pos[dim_x]    ].hn) &&
+        (world.hiker_dist[c->pos[dim_y] - 1][c->pos[dim_x]    ] >
+         world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker))) {
+      world.hiker_dist[c->pos[dim_y] - 1][c->pos[dim_x]    ] =
+        world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] - 1][c->pos[dim_x]    ].hn);
+    }
+    if ((p[c->pos[dim_y] - 1][c->pos[dim_x] + 1].hn) &&
+        (world.hiker_dist[c->pos[dim_y] - 1][c->pos[dim_x] + 1] >
+         world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker))) {
+      world.hiker_dist[c->pos[dim_y] - 1][c->pos[dim_x] + 1] =
+        world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] - 1][c->pos[dim_x] + 1].hn);
+    }
+    if ((p[c->pos[dim_y]    ][c->pos[dim_x] - 1].hn) &&
+        (world.hiker_dist[c->pos[dim_y]    ][c->pos[dim_x] - 1] >
+         world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker))) {
+      world.hiker_dist[c->pos[dim_y]    ][c->pos[dim_x] - 1] =
+        world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y]    ][c->pos[dim_x] - 1].hn);
+    }
+    if ((p[c->pos[dim_y]    ][c->pos[dim_x] + 1].hn) &&
+        (world.hiker_dist[c->pos[dim_y]    ][c->pos[dim_x] + 1] >
+         world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker))) {
+      world.hiker_dist[c->pos[dim_y]    ][c->pos[dim_x] + 1] =
+        world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y]    ][c->pos[dim_x] + 1].hn);
+    }
+    if ((p[c->pos[dim_y] + 1][c->pos[dim_x] - 1].hn) &&
+        (world.hiker_dist[c->pos[dim_y] + 1][c->pos[dim_x] - 1] >
+         world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker))) {
+      world.hiker_dist[c->pos[dim_y] + 1][c->pos[dim_x] - 1] =
+        world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] + 1][c->pos[dim_x] - 1].hn);
+    }
+    if ((p[c->pos[dim_y] + 1][c->pos[dim_x]    ].hn) &&
+        (world.hiker_dist[c->pos[dim_y] + 1][c->pos[dim_x]    ] >
+         world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker))) {
+      world.hiker_dist[c->pos[dim_y] + 1][c->pos[dim_x]    ] =
+        world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] + 1][c->pos[dim_x]    ].hn);
+    }
+    if ((p[c->pos[dim_y] + 1][c->pos[dim_x] + 1].hn) &&
+        (world.hiker_dist[c->pos[dim_y] + 1][c->pos[dim_x] + 1] >
+         world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker))) {
+      world.hiker_dist[c->pos[dim_y] + 1][c->pos[dim_x] + 1] =
+        world.hiker_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_hiker);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] + 1][c->pos[dim_x] + 1].hn);
+    }
+  }
+  heap_delete(&h);
+
+  heap_init(&h, rival_cmp, NULL);
+
+  for (y = 1; y < MAP_Y - 1; y++) {
+    for (x = 1; x < MAP_X - 1; x++) {
+      if (ter_cost(x, y, char_rival) != INT_MAX) {
+        p[y][x].hn = heap_insert(&h, &p[y][x]);
+      } else {
+        p[y][x].hn = NULL;
+      }
+    }
+  }
+
+  while ((c = heap_remove_min(&h))) {
+    c->hn = NULL;
+    if ((p[c->pos[dim_y] - 1][c->pos[dim_x] - 1].hn) &&
+        (world.rival_dist[c->pos[dim_y] - 1][c->pos[dim_x] - 1] >
+         world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival))) {
+      world.rival_dist[c->pos[dim_y] - 1][c->pos[dim_x] - 1] =
+        world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] - 1][c->pos[dim_x] - 1].hn);
+    }
+    if ((p[c->pos[dim_y] - 1][c->pos[dim_x]    ].hn) &&
+        (world.rival_dist[c->pos[dim_y] - 1][c->pos[dim_x]    ] >
+         world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival))) {
+      world.rival_dist[c->pos[dim_y] - 1][c->pos[dim_x]    ] =
+        world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] - 1][c->pos[dim_x]    ].hn);
+    }
+    if ((p[c->pos[dim_y] - 1][c->pos[dim_x] + 1].hn) &&
+        (world.rival_dist[c->pos[dim_y] - 1][c->pos[dim_x] + 1] >
+         world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival))) {
+      world.rival_dist[c->pos[dim_y] - 1][c->pos[dim_x] + 1] =
+        world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] - 1][c->pos[dim_x] + 1].hn);
+    }
+    if ((p[c->pos[dim_y]    ][c->pos[dim_x] - 1].hn) &&
+        (world.rival_dist[c->pos[dim_y]    ][c->pos[dim_x] - 1] >
+         world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival))) {
+      world.rival_dist[c->pos[dim_y]    ][c->pos[dim_x] - 1] =
+        world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y]    ][c->pos[dim_x] - 1].hn);
+    }
+    if ((p[c->pos[dim_y]    ][c->pos[dim_x] + 1].hn) &&
+        (world.rival_dist[c->pos[dim_y]    ][c->pos[dim_x] + 1] >
+         world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival))) {
+      world.rival_dist[c->pos[dim_y]    ][c->pos[dim_x] + 1] =
+        world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y]    ][c->pos[dim_x] + 1].hn);
+    }
+    if ((p[c->pos[dim_y] + 1][c->pos[dim_x] - 1].hn) &&
+        (world.rival_dist[c->pos[dim_y] + 1][c->pos[dim_x] - 1] >
+         world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival))) {
+      world.rival_dist[c->pos[dim_y] + 1][c->pos[dim_x] - 1] =
+        world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] + 1][c->pos[dim_x] - 1].hn);
+    }
+    if ((p[c->pos[dim_y] + 1][c->pos[dim_x]    ].hn) &&
+        (world.rival_dist[c->pos[dim_y] + 1][c->pos[dim_x]    ] >
+         world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival))) {
+      world.rival_dist[c->pos[dim_y] + 1][c->pos[dim_x]    ] =
+        world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] + 1][c->pos[dim_x]    ].hn);
+    }
+    if ((p[c->pos[dim_y] + 1][c->pos[dim_x] + 1].hn) &&
+        (world.rival_dist[c->pos[dim_y] + 1][c->pos[dim_x] + 1] >
+         world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+         ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival))) {
+      world.rival_dist[c->pos[dim_y] + 1][c->pos[dim_x] + 1] =
+        world.rival_dist[c->pos[dim_y]][c->pos[dim_x]] +
+        ter_cost(c->pos[dim_x], c->pos[dim_y], char_rival);
+      heap_decrease_key_no_replace(&h,
+                                   p[c->pos[dim_y] + 1][c->pos[dim_x] + 1].hn);
+    }
+  }
+  heap_delete(&h);
+}
+
+void init_pc()
+{
+  int x, y;
+
+  do {
+    x = rand() % (MAP_X - 2) + 1;
+    y = rand() % (MAP_Y - 2) + 1;
+  } while (world.cur_map->map[y][x] != ter_path);
+
+  world.pc.pos[dim_x] = x;
+  world.pc.pos[dim_y] = y;
+}
+
+void print_hiker_dist()
+{
+  int x, y;
+
+  for (y = 0; y < MAP_Y; y++) {
+    for (x = 0; x < MAP_X; x++) {
+      if (world.hiker_dist[y][x] == INT_MAX) {
+        printf("   ");
+      } else {
+        printf(" %02d", world.hiker_dist[y][x] % 100);
+      }
+    }
+    printf("\n");
+  }
+}
+
+void print_rival_dist()
+{
+  int x, y;
+
+  for (y = 0; y < MAP_Y; y++) {
+    for (x = 0; x < MAP_X; x++) {
+      if (world.rival_dist[y][x] == INT_MAX || world.rival_dist[y][x] < 0) {
+        printf("   ");
+      } else {
+        printf(" %02d", world.rival_dist[y][x] % 100);
+      }
+    }
+    printf("\n");
+  }
+}
 
 int main(int argc, char *argv[])
 {
@@ -1137,7 +1254,15 @@ int main(int argc, char *argv[])
   srand(seed);
 
   init_world();
+  init_pc();
+  pathfind(world.cur_map);
 
+  print_map();
+  print_hiker_dist();
+  print_rival_dist();
+
+  return 0;
+  
   do {
     print_map();  
     printf("Current position is %d%cx%d%c (%d,%d).  "

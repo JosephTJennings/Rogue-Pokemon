@@ -1,3 +1,21 @@
+commit fc5612dcb66622b47ce4e693d8f4bc6b7d0fda8e
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Thu Feb 23 00:24:23 2023 -0600
+
+    Partially fixed dijkstras.
+
+commit 00ca3719ec31155016b47f52fe0af8302e93d171
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Thu Feb 23 00:07:19 2023 -0600
+
+    Added diagonal traversal.
+
+commit c38b5297f7265e0a65cc79a1498fba53aeec77ac
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Feb 22 23:54:31 2023 -0600
+
+    Added cahngelog...
+
 commit 91dd1fc38532075a53229652457bea5cc294419d
 Author: josephTJennings <josephjenningsct@gmail.com>
 Date:   Wed Feb 22 23:52:31 2023 -0600
