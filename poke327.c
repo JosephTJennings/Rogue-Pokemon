@@ -76,9 +76,18 @@ typedef enum __attribute__ ((__packed__)) character_type {
   char_hiker,
   char_rival,
   char_swimmer,
+  char_explorer,
+  char_sentrie,
+  char_wanderer,
+  char_pacer,
   char_other,
   num_character_types
 } character_type_t;
+
+typedef struct npc {
+  character_type_t npcType;
+  pair_t pos;
+}npc_t;
 
 typedef struct pc {
   pair_t pos;
@@ -805,6 +814,75 @@ static int place_trees(map_t *m)
   return 0;
 }
 
+static npc_t** place_NPCS(int numtrainers) {
+  int randNum;
+  npc_t* tmpNPC;
+  int npcCount;
+  npc_t** arrPtr;
+  int16_t tmpX, tmpY;
+
+  arrPtr = malloc(sizeof(npc_t) * numtrainers);
+  npcCount = numtrainers;
+
+  while(npcCount > 0) {
+    tmpX = rand() % (MAP_X - 2) + 1;
+    tmpY = rand() % (MAP_Y - 2) + 1;
+    tmpNPC = malloc(sizeof(npc_t));
+    switch(npcCount){
+      case 1:
+        // generate rival
+        while((world.cur_map->map[tmpY][tmpX] != ter_path) && (world.cur_map->map[tmpY][tmpX] != ter_clearing) && (world.cur_map->map[tmpY][tmpX] != ter_grass)) {
+          tmpX = rand() % (MAP_X - 2) + 1;
+          tmpY = rand() % (MAP_Y - 2) + 1;
+        }
+        tmpNPC->npcType = char_rival;
+        break;
+      case 2:
+        //generate hiker
+        while((world.cur_map->map[tmpY][tmpX] != ter_path) && (world.cur_map->map[tmpY][tmpX] != ter_clearing) && (world.cur_map->map[tmpY][tmpX] != ter_grass
+              && world.cur_map->map[tmpY][tmpX] != ter_mountain && world.cur_map->map[tmpY][tmpX] != ter_forest)) {
+          tmpX = rand() % (MAP_X - 2) + 1;
+          tmpY = rand() % (MAP_Y - 2) + 1;
+        }
+        tmpNPC->npcType = char_hiker;
+        break;
+      case 3:
+        //generate swimmer
+        while(world.cur_map->map[tmpY][tmpX] != ter_water) {
+          tmpX = rand() % (MAP_X - 2) + 1;
+          tmpY = rand() % (MAP_Y - 2) + 1;
+        }
+        tmpNPC->npcType = char_swimmer;
+        break;
+      default:
+        //randomly generate one (not hiker or rival for sake of making it easy)
+        randNum = rand() % 4;
+        while((world.cur_map->map[tmpY][tmpX] != ter_path) && (world.cur_map->map[tmpY][tmpX] != ter_clearing) && (world.cur_map->map[tmpY][tmpX] != ter_grass)) {
+          tmpX = rand() % (MAP_X - 2) + 1;
+          tmpY = rand() % (MAP_Y - 2) + 1;
+        }
+        switch(randNum) {
+          case 0:
+            tmpNPC->npcType = char_pacer;
+            break;
+          case 1:
+            tmpNPC->npcType = char_wanderer;
+            break;
+          case 2:
+            tmpNPC->npcType = char_sentrie;
+            break;
+          case 3:
+            tmpNPC->npcType = char_explorer;
+            break;
+        }
+    }
+    tmpNPC->pos[dim_y] = tmpY;
+    tmpNPC->pos[dim_x] = tmpX;
+    arrPtr[numtrainers - npcCount] = tmpNPC;
+    npcCount--;
+  }
+  return arrPtr;
+}
 // New map expects cur_idx to refer to the index to be generated.  If that
 // map has already been generated then the only thing this does is set
 // cur_map.
@@ -872,15 +950,59 @@ static int new_map()
   return 0;
 }
 
-static void print_map()
+static void freeNPC(npc_t** npcArray, int size) {
+  int i;
+  for(i = 0; i < size; i++) {
+    free(npcArray[i]);
+  }
+}
+
+static void print_map(npc_t** npcArray, int numtrainers)
 {
-  int x, y;
+  int x, y, z;
+  int npcFound;
+  character_type_t npcType;
   int default_reached = 0;
 
   printf("\n\n\n");
 
   for (y = 0; y < MAP_Y; y++) {
     for (x = 0; x < MAP_X; x++) {
+      npcFound = 0;
+      for(z = 0; z < numtrainers; z++) {
+         if (y == npcArray[z]->pos[dim_y] && x == npcArray[z]->pos[dim_x]) {
+            npcType = npcArray[z]->npcType;
+            switch(npcType){
+              case(char_hiker):
+                putchar('h');
+                break;
+              case(char_rival):
+                putchar('r');
+                break;
+              case(char_pacer):
+                putchar('p');
+                break;
+              case(char_wanderer):
+                putchar('w');
+                break;
+              case(char_sentrie):
+                putchar('s');
+                break;
+              case(char_explorer):
+                putchar('e');
+                break;
+              case(char_swimmer):
+                putchar('m');
+                break;
+              default:
+                break;
+            }
+            npcFound = 1;
+            break;
+         }
+      }
+      if(npcFound == 1) continue;
+
       if (world.pc.pos[dim_y] == y &&
           world.pc.pos[dim_x] == x) {
         putchar('@');
@@ -939,6 +1061,7 @@ void init_world()
 {
   world.cur_idx[dim_x] = world.cur_idx[dim_y] = WORLD_SIZE / 2;
   new_map();
+
 }
 
 void delete_world()
@@ -1241,7 +1364,8 @@ int main(int argc, char *argv[])
   struct timeval tv;
   uint32_t seed;
   char c;
-  int x, y;
+  int x, y, numtrainers;
+  npc_t** npcArr;
 
   if (argc == 2) {
     seed = atoi(argv[1]);
@@ -1257,14 +1381,18 @@ int main(int argc, char *argv[])
   init_pc();
   pathfind(world.cur_map);
 
-  print_map();
-  print_hiker_dist();
-  print_rival_dist();
+  numtrainers = 30;
+  npcArr = place_NPCS(numtrainers);
 
-  return 0;
+  print_map(npcArr, numtrainers);
+  //print_hiker_dist();
+  //print_rival_dist();
+
   
+  return 0;
+
   do {
-    print_map();  
+    //print_map();  
     printf("Current position is %d%cx%d%c (%d,%d).  "
            "Enter command: ",
            abs(world.cur_idx[dim_x] - (WORLD_SIZE / 2)),
@@ -1325,6 +1453,7 @@ int main(int argc, char *argv[])
     }
   } while (c != 'q');
 
+  freeNPC(npcArr, numtrainers);
   delete_world();
 
   printf("But how are you going to be the very best if you quit?\n");
