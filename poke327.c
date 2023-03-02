@@ -1762,7 +1762,9 @@ int main(int argc, char *argv[])
   init_pc();
   pathfind(world.cur_map);
 
-  numtrainers = 10;
+  if(argc > 1) {
+    numtrainers = atoi(argv[2]);
+  } else numtrainers = 10;
   npcArr = place_NPCS(numtrainers);
   
   heap_init(&h, npc_cmp, NULL);
