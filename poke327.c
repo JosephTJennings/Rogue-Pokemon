@@ -1115,7 +1115,7 @@ static void move_wanderer(npc_t* npc) {
           npc->dir = npc->dir + 1;
       }
     case 3:
-      if(npc->pos[dim_x] - 1 < MAP_X) {
+      if(npc->pos[dim_x] - 1 > 0) {
         ter =  world.cur_map->map[npc->pos[dim_y]][npc->pos[dim_x - 1]];
         if(ter == origTer){
           npc->time = npc->time + getTerCost(npc, ter);
@@ -1129,18 +1129,150 @@ static void move_wanderer(npc_t* npc) {
       }
   }
 }
+static void move_explorer(npc_t* npc) {
+  terrain_type_t ter;
+  int32_t terCost;
+  switch(npc->dir){
+    case 0:
+      if(npc->pos[dim_y] - 1 > 0) {
+        ter =  world.cur_map->map[npc->pos[dim_y] - 1][npc->pos[dim_x]];
+        terCost = getTerCost(npc, ter);
+        if(terCost != INT_MAX){
+          npc->time = npc->time + getTerCost(npc, ter);
+          npc->pos[dim_y] = npc->pos[dim_y] - 1;
+          break;
+        } else {
+          npc->dir = npc->dir + 1;
+        }
+      }else {
+          npc->dir = npc->dir + 1;
+      }
+    case 1:
+      if(npc->pos[dim_x] + 1 < MAP_X) {
+        ter =  world.cur_map->map[npc->pos[dim_y]][npc->pos[dim_x + 1]];
+        terCost = getTerCost(npc, ter);
+        if(terCost != INT_MAX){
+          npc->time = npc->time + getTerCost(npc, ter);
+          npc->pos[dim_x] = npc->pos[dim_x] + 1;
+          break;
+        } else {
+          npc->dir = npc->dir + 1;
+        }
+      }else {
+          npc->dir = npc->dir + 1;
+      }
+    case 2:
+      if(npc->pos[dim_y] + 1 < MAP_Y) {
+        ter =  world.cur_map->map[npc->pos[dim_y] + 1][npc->pos[dim_x]];
+        terCost = getTerCost(npc, ter);
+        if(terCost != INT_MAX){
+          npc->time = npc->time + getTerCost(npc, ter);
+          npc->pos[dim_y] = npc->pos[dim_y] + 1;
+          break;
+        } else {
+          npc->dir = npc->dir + 1;
+        }
+      }else {
+          npc->dir = npc->dir + 1;
+      }
+    case 3:
+      if(npc->pos[dim_x] - 1 > 0) {
+        ter =  world.cur_map->map[npc->pos[dim_y]][npc->pos[dim_x - 1]];
+        terCost = getTerCost(npc, ter);
+        if(terCost != INT_MAX){
+          npc->time = npc->time + getTerCost(npc, ter);
+          npc->pos[dim_x] = npc->pos[dim_x] - 1;
+          break;
+        } else {
+          npc->dir = 0;
+        }
+      }else {
+          npc->dir = 0;
+      }
+  }
+}
+static void move_rival(npc_t* npc){
+  int32_t lowCost = INT_MAX;
+  pair_t newPos;
+  newPos[dim_x] = 41;
+  newPos[dim_y] = 10;
+  if(npc->pos[dim_x] - 1 > 0 && npc->pos[dim_x] + 1 < MAP_X && npc->pos[dim_y] - 1 > 0 && npc->pos[dim_y] + 1 < MAP_Y) { // not on an edge
+    if(world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x]   ] > 0) {
+      if(world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x]   ] < lowCost) {
+        lowCost = world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x]   ];
+        newPos[dim_x] = npc->pos[dim_x]   ;
+        newPos[dim_y] = npc->pos[dim_y] + 1;
+      }
+    }
+  }if(world.rival_dist[npc->pos[dim_y]   ][npc->pos[dim_x] - 1] > 0) {
+      if(world.rival_dist[npc->pos[dim_y]   ][npc->pos[dim_x] - 1] < lowCost) {
+        lowCost = world.rival_dist[npc->pos[dim_y]   ][npc->pos[dim_x] - 1];
+        newPos[dim_y] = npc->pos[dim_y]    ;
+        newPos[dim_x] = npc->pos[dim_x] - 1;
+      }
+    }if(world.rival_dist[npc->pos[dim_y] - 1][npc->pos[dim_x]   ] > 0) {
+      if(world.rival_dist[npc->pos[dim_y] - 1][npc->pos[dim_x]   ] < lowCost) {
+        lowCost = world.rival_dist[npc->pos[dim_y] - 1][npc->pos[dim_x]   ];
+        newPos[dim_y] = npc->pos[dim_y] - 1;
+        newPos[dim_x] = npc->pos[dim_x]   ;
+      }
+    }if(world.rival_dist[npc->pos[dim_y]   ][npc->pos[dim_x] + 1] > 0) {
+      if(world.rival_dist[npc->pos[dim_y]   ][npc->pos[dim_x] + 1] < lowCost) {
+        lowCost = world.rival_dist[npc->pos[dim_y]   ][npc->pos[dim_x] + 1];
+        newPos[dim_y] = npc->pos[dim_y]    ;
+        newPos[dim_x] = npc->pos[dim_x] + 1;
+      }
+    }
+
+    if(world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] - 1] > 0) {
+       if(world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] - 1] < lowCost) {
+        lowCost = world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] - 1];
+        newPos[dim_y] = npc->pos[dim_y] + 1;
+        newPos[dim_x] = npc->pos[dim_x] - 1;
+      }
+    }if(world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] + 1] > 0) {
+      if(world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] + 1] < lowCost) {
+        lowCost = world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] + 1];
+        newPos[dim_y] = npc->pos[dim_y] + 1;
+        newPos[dim_x] = npc->pos[dim_x] + 1;
+      }
+    }if(world.rival_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] - 1] > 0) {
+      if(world.rival_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] - 1] < lowCost) {
+        lowCost = world.rival_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] - 1];
+        newPos[dim_y] = npc->pos[dim_y] - 1;
+        newPos[dim_x] = npc->pos[dim_x] - 1;
+      }
+    }if(world.rival_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] + 1] > 0) {
+      if(world.rival_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] + 1] < lowCost) {
+        lowCost = world.rival_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] + 1];
+        newPos[dim_y] = npc->pos[dim_y] - 1;
+        newPos[dim_x] = npc->pos[dim_x] + 1;
+      }
+    }
+  npc->pos[dim_y] = newPos[dim_y];
+  npc->pos[dim_x] = newPos[dim_x];
+  npc->time = npc->time + lowCost;
+}
+
 static void moveOneNPC(npc_t* npc) {
   switch(npc->npcType){
+    case char_rival:
+      printf("\n pos before %d, %d", npc->pos[dim_x], npc->pos[dim_y]);
+      move_rival(npc);
+      printf("pos after %d, %d\n", npc->pos[dim_x], npc->pos[dim_y]);
     case char_sentrie:
-      npc->time = 10000000;
+      npc->time = INT_MAX;
     case char_pacer:
       move_pacer(npc);
       break;
+    case char_swimmer:
     case char_wanderer:
-      printf("\n pos before %d, %d", npc->pos[dim_x], npc->pos[dim_y]);
+      //printf("\n pos before %d, %d", npc->pos[dim_x], npc->pos[dim_y]);
       move_wanderer(npc);
-      printf("pos after %d, %d\n", npc->pos[dim_x], npc->pos[dim_y]);
+      //printf("pos after %d, %d\n", npc->pos[dim_x], npc->pos[dim_y]);
       break;
+    case char_explorer:
+      move_explorer(npc);
     default:
       break;
     //MOVE
