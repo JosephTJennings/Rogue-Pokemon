@@ -937,6 +937,7 @@ static npc_t** place_NPCS(int numtrainers) {
     tmpNPC->pos[dim_y] = tmpY;
     tmpNPC->pos[dim_x] = tmpX;
     tmpNPC->time = 0;
+    if(tmpNPC->npcType == char_sentrie) tmpNPC->time = INT_MAX;
     arrPtr[numtrainers - npcCount] = tmpNPC;
     npcCount--;
   }
@@ -1191,11 +1192,74 @@ static void move_explorer(npc_t* npc) {
       }
   }
 }
+static void move_hiker(npc_t* npc) {
+  int32_t lowCost = INT_MAX;
+  pair_t newPos;
+  newPos[dim_x] = -1;
+  newPos[dim_y] = -1;
+  if(npc->pos[dim_x] - 1 > 0 && npc->pos[dim_x] + 1 < MAP_X && npc->pos[dim_y] - 1 > 0 && npc->pos[dim_y] + 1 < MAP_Y) { // not on an edge
+    if(world.hiker_dist[npc->pos[dim_y] + 1][npc->pos[dim_x]   ] > 0) {
+      if(world.hiker_dist[npc->pos[dim_y] + 1][npc->pos[dim_x]   ] < lowCost) {
+        lowCost = world.hiker_dist[npc->pos[dim_y] + 1][npc->pos[dim_x]   ];
+        newPos[dim_x] = npc->pos[dim_x]   ;
+        newPos[dim_y] = npc->pos[dim_y] + 1;
+      }
+    }
+  }if(world.hiker_dist[npc->pos[dim_y]   ][npc->pos[dim_x] - 1] > 0) {
+      if(world.hiker_dist[npc->pos[dim_y]   ][npc->pos[dim_x] - 1] < lowCost) {
+        lowCost = world.hiker_dist[npc->pos[dim_y]   ][npc->pos[dim_x] - 1];
+        newPos[dim_y] = npc->pos[dim_y]    ;
+        newPos[dim_x] = npc->pos[dim_x] - 1;
+      }
+    }if(world.hiker_dist[npc->pos[dim_y] - 1][npc->pos[dim_x]   ] > 0) {
+      if(world.hiker_dist[npc->pos[dim_y] - 1][npc->pos[dim_x]   ] < lowCost) {
+        lowCost = world.hiker_dist[npc->pos[dim_y] - 1][npc->pos[dim_x]   ];
+        newPos[dim_y] = npc->pos[dim_y] - 1;
+        newPos[dim_x] = npc->pos[dim_x]   ;
+      }
+    }if(world.hiker_dist[npc->pos[dim_y]   ][npc->pos[dim_x] + 1] > 0) {
+      if(world.hiker_dist[npc->pos[dim_y]   ][npc->pos[dim_x] + 1] < lowCost) {
+        lowCost = world.hiker_dist[npc->pos[dim_y]   ][npc->pos[dim_x] + 1];
+        newPos[dim_y] = npc->pos[dim_y]    ;
+        newPos[dim_x] = npc->pos[dim_x] + 1;
+      }
+    }
+
+    if(world.hiker_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] - 1] > 0) {
+       if(world.hiker_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] - 1] < lowCost) {
+        lowCost = world.hiker_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] - 1];
+        newPos[dim_y] = npc->pos[dim_y] + 1;
+        newPos[dim_x] = npc->pos[dim_x] - 1;
+      }
+    }if(world.hiker_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] + 1] > 0) {
+      if(world.hiker_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] + 1] < lowCost) {
+        lowCost = world.hiker_dist[npc->pos[dim_y] + 1][npc->pos[dim_x] + 1];
+        newPos[dim_y] = npc->pos[dim_y] + 1;
+        newPos[dim_x] = npc->pos[dim_x] + 1;
+      }
+    }if(world.hiker_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] - 1] > 0) {
+      if(world.hiker_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] - 1] < lowCost) {
+        lowCost = world.hiker_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] - 1];
+        newPos[dim_y] = npc->pos[dim_y] - 1;
+        newPos[dim_x] = npc->pos[dim_x] - 1;
+      }
+    }if(world.hiker_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] + 1] > 0) {
+      if(world.hiker_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] + 1] < lowCost) {
+        lowCost = world.hiker_dist[npc->pos[dim_y] - 1][npc->pos[dim_x] + 1];
+        newPos[dim_y] = npc->pos[dim_y] - 1;
+        newPos[dim_x] = npc->pos[dim_x] + 1;
+      }
+    }
+  if(newPos[dim_y] == -1) return;
+  npc->pos[dim_y] = newPos[dim_y];
+  npc->pos[dim_x] = newPos[dim_x];
+  npc->time = npc->time + getTerCost(npc, world.cur_map->map[newPos[dim_y]][newPos[dim_x]]);
+}
 static void move_rival(npc_t* npc){
   int32_t lowCost = INT_MAX;
   pair_t newPos;
-  newPos[dim_x] = 41;
-  newPos[dim_y] = 10;
+  newPos[dim_x] = -1;
+  newPos[dim_y] = -1;
   if(npc->pos[dim_x] - 1 > 0 && npc->pos[dim_x] + 1 < MAP_X && npc->pos[dim_y] - 1 > 0 && npc->pos[dim_y] + 1 < MAP_Y) { // not on an edge
     if(world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x]   ] > 0) {
       if(world.rival_dist[npc->pos[dim_y] + 1][npc->pos[dim_x]   ] < lowCost) {
@@ -1249,48 +1313,38 @@ static void move_rival(npc_t* npc){
         newPos[dim_x] = npc->pos[dim_x] + 1;
       }
     }
+  if(newPos[dim_y] == -1) return;
   npc->pos[dim_y] = newPos[dim_y];
   npc->pos[dim_x] = newPos[dim_x];
-  npc->time = npc->time + lowCost;
+  npc->time = npc->time + getTerCost(npc, world.cur_map->map[newPos[dim_y]][newPos[dim_x]]);
 }
 
 static void moveOneNPC(npc_t* npc) {
   switch(npc->npcType){
+    case char_hiker:
+      move_hiker(npc);
+      break;
     case char_rival:
-      printf("\n pos before %d, %d", npc->pos[dim_x], npc->pos[dim_y]);
       move_rival(npc);
-      printf("pos after %d, %d\n", npc->pos[dim_x], npc->pos[dim_y]);
+      break;
     case char_sentrie:
       npc->time = INT_MAX;
+      break;
     case char_pacer:
       move_pacer(npc);
       break;
     case char_swimmer:
     case char_wanderer:
-      //printf("\n pos before %d, %d", npc->pos[dim_x], npc->pos[dim_y]);
       move_wanderer(npc);
-      //printf("pos after %d, %d\n", npc->pos[dim_x], npc->pos[dim_y]);
       break;
     case char_explorer:
       move_explorer(npc);
+      break;
     default:
       break;
     //MOVE
     }
 }
-void move_npcs(npc_t** npcArray, int numtrainers, heap_t* h) {
-  npc_t* tmpNPC;
-
-  //implement queue and pop off the min cost, then call moveOneNPC
-
-  while((tmpNPC = heap_remove_min(h))) {
-    //printf("pop: %c, %d. ", printNPC(tmpNPC), tmpNPC->time);
-    moveOneNPC(tmpNPC);
-    //heap_insert(h, tmpNPC);
-  }
-  //printf("\n");
-}
-
 
 static void print_map(npc_t** npcArray, int numtrainers)
 {
@@ -1390,6 +1444,20 @@ void delete_world()
 }
 
 #define ter_cost(x, y, c) move_cost[c][m->map[y][x]]
+static void move_npcs(npc_t** npcArray, int numtrainers, heap_t* h) {
+  npc_t* tmpNPC;
+
+  //implement queue and pop off the min cost, then call moveOneNPC
+
+  while((tmpNPC = heap_remove_min(h))) {
+    //printf("pop: %c, %d. ", printNPC(tmpNPC), tmpNPC->time);
+    print_map(npcArray, numtrainers);
+    moveOneNPC(tmpNPC);
+    heap_insert(h, tmpNPC);
+    usleep(250000);
+  }
+  //printf("\n");
+}
 
 static int32_t hiker_cmp(const void *key, const void *with) {
   return (world.hiker_dist[((path_t *) key)->pos[dim_y]]
@@ -1702,11 +1770,7 @@ int main(int argc, char *argv[])
     tmpNPC = npcArr[i];
     heap_insert(&h, tmpNPC);
   }
-  while(1) {
-     print_map(npcArr, numtrainers);
-     move_npcs(npcArr, numtrainers, &h);
-     usleep(250000);
-  }
+  move_npcs(npcArr, numtrainers, &h);
   //print_hiker_dist();
   //print_rival_dist();
 
