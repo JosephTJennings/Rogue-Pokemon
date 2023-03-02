@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <sys/time.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include "heap.h"
 
@@ -87,6 +88,8 @@ typedef enum __attribute__ ((__packed__)) character_type {
 typedef struct npc {
   character_type_t npcType;
   pair_t pos;
+  int32_t time;
+  int dir;// 0N 1E 2S 3W
 }npc_t;
 
 typedef struct pc {
@@ -123,17 +126,71 @@ world_t world;
 #define IM INT_MAX
 int32_t move_cost[num_character_types][num_terrain_types] = {
 //  boulder,tree,path,mart,center,grass,clearing,mountain,forest,water,gate
-  { IM, IM, 10, 10, 10, 20, 10, IM, IM, IM, 10 },
-  { IM, IM, 10, 50, 50, 15, 10, 15, 15, IM, IM },
-  { IM, IM, 10, 50, 50, 20, 10, IM, IM, IM, IM },
-  { IM, IM, IM, IM, IM, IM, IM, IM, IM,  7, IM },
+  { IM, IM, 10, 10, 10, 20, 10, IM, IM, IM, 10 }, //PC
+  { IM, IM, 10, 50, 50, 15, 10, 15, 15, IM, IM }, //HIKER
+  { IM, IM, 10, 50, 50, 20, 10, IM, IM, IM, IM }, //RIVAL/OTHER
+  { IM, IM, IM, IM, IM, IM, IM, IM, IM,  7, IM }, //SWIMMER
 };
 #undef IM
 
 static int32_t path_cmp(const void *key, const void *with) {
   return ((path_t *) key)->cost - ((path_t *) with)->cost;
 }
-
+static int32_t npc_cmp(const void *key, const void *with) {
+  return ((npc_t *) key)->time - ((npc_t *) with)->time;
+}
+static int32_t getTerCost(npc_t* npc, terrain_type_t ter) {
+  int charPos;
+  int terPos;
+  switch(npc->npcType) {
+    case char_hiker:
+      charPos = 1;
+      break;
+    case char_swimmer:
+      charPos = 3;
+      break;
+    default:
+      charPos = 2;
+  }
+  switch(ter){
+    case ter_boulder:
+      terPos = 0;
+      break;
+    case ter_tree:
+      terPos = 1;
+      break;
+    case ter_path:
+      terPos = 2;
+      break;
+    case ter_mart:
+      terPos = 3;
+      break;
+    case ter_center:
+      terPos = 4;
+      break;
+    case ter_grass:
+      terPos = 5;
+      break;
+    case ter_clearing:
+      terPos = 6;
+      break;
+    case ter_mountain:
+      terPos = 7;
+      break;
+    case ter_forest:
+      terPos = 8;
+      break;
+    case ter_water:
+      terPos = 9;
+      break;
+    case ter_gate:
+      terPos = 10;
+      break;
+    default:
+      terPos = 0;
+  }
+  return move_cost[charPos][terPos];
+}
 static int32_t edge_penalty(int8_t x, int8_t y)
 {
   return (x == 1 || y == 1 || x == MAP_X - 2 || y == MAP_Y - 2) ? 2 : 1;
@@ -876,8 +933,10 @@ static npc_t** place_NPCS(int numtrainers) {
             break;
         }
     }
+    tmpNPC->dir = 0;
     tmpNPC->pos[dim_y] = tmpY;
     tmpNPC->pos[dim_x] = tmpX;
+    tmpNPC->time = 0;
     arrPtr[numtrainers - npcCount] = tmpNPC;
     npcCount--;
   }
@@ -957,11 +1016,155 @@ static void freeNPC(npc_t** npcArray, int size) {
   }
 }
 
+static char printNPC(npc_t* npc) {
+
+  switch(npc->npcType){
+      case(char_hiker):
+        return 'h';
+        break;
+      case(char_rival):
+        return 'r';
+        break;
+      case(char_pacer):
+        return ('p');
+        break;
+      case(char_wanderer):
+        return ('w');
+        break;
+      case(char_sentrie):
+        return ('s');
+        break;
+      case(char_explorer):
+        return ('e');
+        break;
+      case(char_swimmer):
+        return ('m');
+        break;
+      default:
+        return '{';
+        break;
+    }
+}
+
+static void move_pacer(npc_t* npc) {
+  terrain_type_t ter;
+  int32_t terCost;
+  if(npc->pos[dim_x] - 1 > 0) {
+    ter = world.cur_map->map[npc->pos[dim_y]][npc->pos[dim_x] - 1];
+    terCost = getTerCost(npc, ter);
+    if(terCost != INT_MAX) {
+      npc->pos[dim_x] = npc->pos[dim_x] - 1;
+      npc->time = npc->time + terCost;
+      return;
+    }
+  }
+  if(npc->pos[dim_x] + 1 < MAP_X) {
+    ter = world.cur_map->map[npc->pos[dim_y]][npc->pos[dim_x] + 1];
+    terCost = getTerCost(npc, ter);
+    if(terCost != INT_MAX) {
+      npc->pos[dim_x] = npc->pos[dim_x] + 1;
+      npc->time = npc->time + terCost;
+      return;
+    }
+  }else {
+      npc->time = 10000000;
+      return;
+  }
+}
+static void move_wanderer(npc_t* npc) {
+  terrain_type_t origTer, ter;
+  origTer = world.cur_map->map[npc->pos[dim_y]][npc->pos[dim_x]];
+  switch(npc->dir){
+    case 0:
+      if(npc->pos[dim_y] - 1 > 0) {
+        ter =  world.cur_map->map[npc->pos[dim_y] - 1][npc->pos[dim_x]];
+        if(ter == origTer){
+          npc->time = npc->time + getTerCost(npc, ter);
+          npc->pos[dim_y] = npc->pos[dim_y] - 1;
+          break;
+        } else {
+          npc->dir = npc->dir + 1;
+        }
+      }else {
+          npc->dir = npc->dir + 1;
+      }
+    case 1:
+      if(npc->pos[dim_x] + 1 < MAP_X) {
+        ter =  world.cur_map->map[npc->pos[dim_y]][npc->pos[dim_x + 1]];
+        if(ter == origTer){
+          npc->time = npc->time + getTerCost(npc, ter);
+          npc->pos[dim_x] = npc->pos[dim_x] + 1;
+          break;
+        } else {
+          npc->dir = npc->dir + 1;
+        }
+      }else {
+          npc->dir = npc->dir + 1;
+      }
+    case 2:
+      if(npc->pos[dim_y] + 1 < MAP_Y) {
+        ter =  world.cur_map->map[npc->pos[dim_y] + 1][npc->pos[dim_x]];
+        if(ter == origTer){
+          npc->time = npc->time + getTerCost(npc, ter);
+          npc->pos[dim_y] = npc->pos[dim_y] + 1;
+          break;
+        } else {
+          npc->dir = npc->dir + 1;
+        }
+      }else {
+          npc->dir = npc->dir + 1;
+      }
+    case 3:
+      if(npc->pos[dim_x] - 1 < MAP_X) {
+        ter =  world.cur_map->map[npc->pos[dim_y]][npc->pos[dim_x - 1]];
+        if(ter == origTer){
+          npc->time = npc->time + getTerCost(npc, ter);
+          npc->pos[dim_x] = npc->pos[dim_x] - 1;
+          break;
+        } else {
+          npc->dir = 0;
+        }
+      }else {
+          npc->dir = 0;
+      }
+  }
+}
+static void moveOneNPC(npc_t* npc) {
+  switch(npc->npcType){
+    case char_sentrie:
+      npc->time = 10000000;
+    case char_pacer:
+      move_pacer(npc);
+      break;
+    case char_wanderer:
+      printf("\n pos before %d, %d", npc->pos[dim_x], npc->pos[dim_y]);
+      move_wanderer(npc);
+      printf("pos after %d, %d\n", npc->pos[dim_x], npc->pos[dim_y]);
+      break;
+    default:
+      break;
+    //MOVE
+    }
+}
+void move_npcs(npc_t** npcArray, int numtrainers, heap_t* h) {
+  npc_t* tmpNPC;
+
+  //implement queue and pop off the min cost, then call moveOneNPC
+
+  while((tmpNPC = heap_remove_min(h))) {
+    //printf("pop: %c, %d. ", printNPC(tmpNPC), tmpNPC->time);
+    moveOneNPC(tmpNPC);
+    //heap_insert(h, tmpNPC);
+  }
+  //printf("\n");
+}
+
+
 static void print_map(npc_t** npcArray, int numtrainers)
 {
   int x, y, z;
   int npcFound;
-  character_type_t npcType;
+  char ch;
   int default_reached = 0;
 
   printf("\n\n\n");
@@ -971,32 +1174,8 @@ static void print_map(npc_t** npcArray, int numtrainers)
       npcFound = 0;
       for(z = 0; z < numtrainers; z++) {
          if (y == npcArray[z]->pos[dim_y] && x == npcArray[z]->pos[dim_x]) {
-            npcType = npcArray[z]->npcType;
-            switch(npcType){
-              case(char_hiker):
-                putchar('h');
-                break;
-              case(char_rival):
-                putchar('r');
-                break;
-              case(char_pacer):
-                putchar('p');
-                break;
-              case(char_wanderer):
-                putchar('w');
-                break;
-              case(char_sentrie):
-                putchar('s');
-                break;
-              case(char_explorer):
-                putchar('e');
-                break;
-              case(char_swimmer):
-                putchar('m');
-                break;
-              default:
-                break;
-            }
+            ch = printNPC(npcArray[z]);
+            putchar(ch);
             npcFound = 1;
             break;
          }
@@ -1364,8 +1543,10 @@ int main(int argc, char *argv[])
   struct timeval tv;
   uint32_t seed;
   char c;
-  int x, y, numtrainers;
+  int x, y, numtrainers, i;
   npc_t** npcArr;
+  npc_t* tmpNPC;
+  heap_t h;
 
   if (argc == 2) {
     seed = atoi(argv[1]);
@@ -1381,10 +1562,19 @@ int main(int argc, char *argv[])
   init_pc();
   pathfind(world.cur_map);
 
-  numtrainers = 30;
+  numtrainers = 10;
   npcArr = place_NPCS(numtrainers);
-
-  print_map(npcArr, numtrainers);
+  
+  heap_init(&h, npc_cmp, NULL);
+  for(i = 0; i < numtrainers; i++) {
+    tmpNPC = npcArr[i];
+    heap_insert(&h, tmpNPC);
+  }
+  while(1) {
+     print_map(npcArr, numtrainers);
+     move_npcs(npcArr, numtrainers, &h);
+     usleep(250000);
+  }
   //print_hiker_dist();
   //print_rival_dist();
 
