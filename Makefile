@@ -8,7 +8,7 @@ TERM = "S2019"
 CFLAGS = -Wall -Werror -ggdb -funroll-loops -DTERM=$(TERM)
 CXXFLAGS = -Wall -Werror -ggdb -funroll-loops -DTERM=$(TERM)
 
-LDFLAGS = 
+LDFLAGS = -lncurses
 
 BIN = poke327
 OBJS = poke327.o heap.o
