@@ -1870,7 +1870,7 @@ void game_loop(WINDOW* window)
   character_t *c;
   character_t *charArr[world.cur_map->charCount];
   pair_t d;
-  int tmpInp, successMove, charIndex, y, x;
+  int tmpInp, successMove, charIndex, y, x, tmpIndex;
   bool run = TRUE;
   bool invalidInput = TRUE;
 
@@ -1878,17 +1878,6 @@ void game_loop(WINDOW* window)
   keypad(window, TRUE);
   refresh();
   wrefresh(window);
-
-  //Fill the charArr with the current chracters on the map
-  charIndex = 0;
-  for (y = 0; y < MAP_Y; y++) {
-    for (x = 0; x < MAP_X; x++) {
-      if(world.cur_map->cmap[y][x] != NULL && world.cur_map->cmap[y][x]->npc != NULL) {
-        charArr[charIndex] = world.cur_map->cmap[y][x];
-        charIndex++;
-      }
-    }
-  }
 
   while (run) {
     c = heap_remove_min(&world.cur_map->turn);
@@ -1979,6 +1968,17 @@ void game_loop(WINDOW* window)
           case 116:
             charIndex = 0;
             do {
+              //Fill the charArr with the current chracters on the map
+              tmpIndex = 0;
+              for (y = 0; y < MAP_Y; y++) {
+                for (x = 0; x < MAP_X; x++) {
+                  if(world.cur_map->cmap[y][x] != NULL && world.cur_map->cmap[y][x]->npc != NULL) {
+                    charArr[tmpIndex] = world.cur_map->cmap[y][x];
+                    tmpIndex++;
+                  }
+                }
+              }
+
               wmove(window, 0, 0);
               wprintw(window, "NPC %d/%d: %c, ", charIndex + 1, world.cur_map->charCount, 
                       charArr[charIndex]->symbol);
@@ -1988,9 +1988,9 @@ void game_loop(WINDOW* window)
                 wprintw(window, "%d north and ", c->pos[dim_y] - charArr[charIndex]->pos[dim_y] );
               }
               if(charArr[charIndex]->pos[dim_x] - c->pos[dim_x] >= 0) {
-                wprintw(window, "%d west\n", charArr[charIndex]->pos[dim_x] - c->pos[dim_x]);
+                wprintw(window, "%d east\n", charArr[charIndex]->pos[dim_x] - c->pos[dim_x]);
               } else {
-                wprintw(window, "%d east\n", c->pos[dim_x] - charArr[charIndex]->pos[dim_x] );
+                wprintw(window, "%d west\n", c->pos[dim_x] - charArr[charIndex]->pos[dim_x] );
               }
               
               wrefresh(window);
