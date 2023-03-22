@@ -6,7 +6,7 @@
 #include <sys/time.h>
 #include <assert.h>
 #include <unistd.h>
-
+#include <ncurses.h>
 #include "heap.h"
 
 #define malloc(size) ({          \
@@ -1465,55 +1465,83 @@ static void print_map()
   int x, y;
   int default_reached = 0;
 
-  printf("\n\n\n");
-
+  start_color();
+  init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+  init_pair(2, COLOR_GREEN, COLOR_BLACK);
+  init_pair(3, COLOR_WHITE, COLOR_BLACK);
+  init_pair(4, COLOR_RED, COLOR_BLACK);
+  init_pair(5, COLOR_BLUE, COLOR_BLACK);
+  init_pair(6, COLOR_MAGENTA, COLOR_BLACK);
   for (y = 0; y < MAP_Y; y++) {
     for (x = 0; x < MAP_X; x++) {
       if (world.cur_map->cmap[y][x]) {
-        putchar(world.cur_map->cmap[y][x]->symbol);
+        attron(COLOR_PAIR(3));
+        mvaddch(y + 1, x, world.cur_map->cmap[y][x]->symbol);
+        attroff(COLOR_PAIR(3));
       } else {
         switch (world.cur_map->map[y][x]) {
         case ter_boulder:
-          putchar(BOULDER_SYMBOL);
+          attron(COLOR_PAIR(1));
+          mvaddch(y + 1, x, BOULDER_SYMBOL);
+          attroff(COLOR_PAIR(1));
           break;
         case ter_mountain:
-          putchar(MOUNTAIN_SYMBOL);
+          attron(COLOR_PAIR(1));
+          mvaddch(y + 1, x, MOUNTAIN_SYMBOL);
+          attroff(COLOR_PAIR(1));
           break;
         case ter_tree:
-          putchar(TREE_SYMBOL);
+          attron(COLOR_PAIR(6));
+          mvaddch(y + 1, x, TREE_SYMBOL);
+          attroff(COLOR_PAIR(6));
           break;
         case ter_forest:
-          putchar(FOREST_SYMBOL);
+          attron(COLOR_PAIR(6));
+          mvaddch(y + 1, x, FOREST_SYMBOL);
+          attroff(COLOR_PAIR(6));
           break;
         case ter_path:
-          putchar(PATH_SYMBOL);
+          attron(COLOR_PAIR(3));
+          mvaddch(y + 1, x, PATH_SYMBOL);
+          attroff(COLOR_PAIR(3));
           break;
         case ter_gate:
-          putchar(GATE_SYMBOL);
+          attron(COLOR_PAIR(3));
+          mvaddch(y + 1, x, GATE_SYMBOL);
+          attroff(COLOR_PAIR(3));
           break;
         case ter_mart:
-          putchar(POKEMART_SYMBOL);
+          attron(COLOR_PAIR(4));
+          mvaddch(y + 1, x, POKEMART_SYMBOL);
+          attroff(COLOR_PAIR(4));
           break;
         case ter_center:
-          putchar(POKEMON_CENTER_SYMBOL);
+          attron(COLOR_PAIR(4));
+          mvaddch(y + 1, x, POKEMON_CENTER_SYMBOL);
+          attroff(COLOR_PAIR(4));
           break;
         case ter_grass:
-          putchar(TALL_GRASS_SYMBOL);
+          attron(COLOR_PAIR(2));
+          mvaddch(y + 1, x, TALL_GRASS_SYMBOL);
+          attroff(COLOR_PAIR(2));
           break;
         case ter_clearing:
-          putchar(SHORT_GRASS_SYMBOL);
+          attron(COLOR_PAIR(2));
+          mvaddch(y + 1, x, SHORT_GRASS_SYMBOL);
+          attroff(COLOR_PAIR(2));
           break;
         case ter_water:
-          putchar(WATER_SYMBOL);
+          attron(COLOR_PAIR(5));
+          mvaddch(y + 1, x, WATER_SYMBOL);
+          attroff(COLOR_PAIR(5));
           break;
         default:
-          putchar(ERROR_SYMBOL);
+          mvaddch(y + 1, x, ERROR_SYMBOL);
           default_reached = 1;
           break;
         }
       }
     }
-    putchar('\n');
   }
 
   if (default_reached) {
@@ -1817,17 +1845,133 @@ void print_character(character_t *c)
          c->pos[dim_y], c->next_turn, c->seq_num);
 }
 
-void game_loop()
+int movePC(int offsetY, int offsetX) { // returns 0 if successfully able to move
+  character_t *c;
+  int16_t newX, newY;
+  c = &world.pc;
+  newX = c->pos[dim_x] + offsetX;
+  newY = c->pos[dim_y] + offsetY;
+  if(newX > 0 && newX < MAP_X && newY > 0 && newY < MAP_Y && move_cost[char_pc][world.cur_map->map[newY][newX]] != INT_MAX) {
+    world.cur_map->cmap[c->pos[dim_y]][c->pos[dim_x]] = NULL;
+    c->pos[dim_x] = newX;
+    c->pos[dim_y] = newY;
+    world.cur_map->cmap[newY][newX] = c;
+    pathfind(world.cur_map);
+    return 0;
+  }
+  return -1;
+}
+
+void game_loop(WINDOW* window)
 {
   character_t *c;
   pair_t d;
-  
-  while (1) {
+  int tmpInp, successMove;
+  bool run = TRUE;
+  bool invalidInput = TRUE;
+
+  cbreak();
+  keypad(window, TRUE);
+  refresh();
+  wrefresh(window);
+  while (run) {
     c = heap_remove_min(&world.cur_map->turn);
     //    print_character(c);
     if (c == &world.pc) {
       print_map();
-      usleep(250000);
+      refresh();
+      while(invalidInput) {
+        tmpInp = wgetch(window);
+        switch(tmpInp){
+          case 53:
+            invalidInput = FALSE;
+            break;
+          case 55:
+          case 121: // move up left
+            successMove = movePC(-1, -1);
+            invalidInput = FALSE;
+            if(successMove == -1) {
+              invalidInput = TRUE;
+              break;
+            }
+            break;
+          case 56:
+          case 107: // move up
+            successMove = movePC(-1, 0);
+            invalidInput = FALSE;
+            if(successMove == -1) {
+              invalidInput = TRUE;
+              break;
+            }
+            break;
+          case 57:
+          case 117:
+            successMove = movePC(-1, 1);
+            invalidInput = FALSE;
+            if(successMove == -1) {
+              invalidInput = TRUE;
+              break;
+            }
+            break;
+          case 54:
+          case 108:
+            successMove = movePC(0, 1);
+            if(successMove == -1) {
+              invalidInput = TRUE;
+              break;
+            }
+            invalidInput = FALSE;
+            break;
+          case 51:
+          case 110:
+            successMove = movePC(1, 1);
+            invalidInput = FALSE;
+            if(successMove == -1) {
+              invalidInput = TRUE;
+              break;
+            }
+            break;
+          case 50:
+          case 106:
+            successMove = movePC(1, 0);
+            invalidInput = FALSE;
+            if(successMove == -1) {
+              invalidInput = TRUE;
+              break;
+            }
+            break;
+          case 49:
+          case 98:
+            successMove = movePC(1, -1);
+            invalidInput = FALSE;
+            if(successMove == -1) {
+              invalidInput = TRUE;
+              break;
+            }
+            break;
+          case 52:
+          case 104:
+            successMove = movePC(0, -1);
+            invalidInput = FALSE;
+            if(successMove == -1) {
+              invalidInput = TRUE;
+              break;
+            }
+            break;
+          case 81:
+            run = FALSE;
+            invalidInput = FALSE;
+            break;
+            
+          default:
+            invalidInput = TRUE;
+            break;
+        }
+        wmove(window, 0, 0);
+        wprintw(window, "Move: (%d) coord: (%d, %d)\n", successMove, c->pos[dim_y], c->pos[dim_x]);
+        wrefresh(window);
+      }
+      invalidInput = TRUE;
       c->next_turn += move_cost[char_pc][world.cur_map->map[c->pos[dim_y]]
                                                            [c->pos[dim_x]]];
     } else {
@@ -1847,7 +1991,6 @@ int main(int argc, char *argv[])
 {
   struct timeval tv;
   uint32_t seed;
-
   if (argc == 2) {
     seed = atoi(argv[1]);
   } else {
@@ -1855,16 +1998,20 @@ int main(int argc, char *argv[])
     seed = (tv.tv_usec ^ (tv.tv_sec << 20)) & 0xffffffff;
   }
 
-  printf("Using seed: %u\n", seed);
+  initscr();
+  refresh();      // Important to refresh screen before refresh window
+
+  WINDOW* window = newwin(0, 0, 0, 0);
   srand(seed);
+  wprintw(window, "Using seed: %u\n", seed);
 
   init_world();
 
-  game_loop();
+  game_loop(window);
   
   delete_world();
 
-  printf("But how are you going to be the very best if you quit?\n");
-  
+  wprintw(window, "But how are you going to be the very best if you quit?\n");
+  endwin();
   return 0;
 }
