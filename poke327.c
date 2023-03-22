@@ -1965,6 +1965,15 @@ void game_loop(WINDOW* window)
               break;
             }
             break;
+          case 62:
+            if(world.cur_map->map[c->pos[dim_y]][c->pos[dim_x]] == ter_center || 
+              world.cur_map->map[c->pos[dim_y]][c->pos[dim_x]] == ter_mart) {
+                do {
+                  wrefresh(window);
+                  tmpInp = wgetch(window);
+                }while(tmpInp != 60);
+            }
+            break;
           case 116:
             charIndex = 0;
             do {
@@ -2020,8 +2029,8 @@ void game_loop(WINDOW* window)
             invalidInput = TRUE;
             break;
         }
-        wmove(window, 0, 0);
-        //wprintw(window, " \n");
+        wmove(window, 0, 1);
+        wprintw(window, " \n");
         wrefresh(window);
       }
       invalidInput = TRUE;
