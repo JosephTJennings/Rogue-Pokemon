@@ -129,6 +129,7 @@ typedef struct map {
   character_t *cmap[MAP_Y][MAP_X];
   heap_t turn;
   int8_t n, s, e, w;
+  int charCount;
 } map_t;
 
 typedef struct queue_node {
@@ -626,16 +627,17 @@ void new_char_other()
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
 }
 
-void place_characters()
+int place_characters()
 {
   int num_trainers = 3;
-
+  int totalCount = 3;
   //Always place a hiker and a rival, then place a random number of others
   new_hiker();
   new_rival();
   new_swimmer();
   do {
     //higher probability of non- hikers and rivals
+    totalCount++;
     switch(rand() % 10) {
     case 0:
       new_hiker();
@@ -652,6 +654,7 @@ void place_characters()
     }
   } while (++num_trainers < MIN_TRAINERS ||
            ((rand() % 100) < ADD_TRAINER_PROB));
+  return totalCount;
 }
 
 int32_t cmp_char_turns(const void *key, const void *with)
@@ -1455,8 +1458,7 @@ static int new_map()
 
   init_pc();
   pathfind(world.cur_map);
-  place_characters();
-
+  world.cur_map->charCount = place_characters();
   return 0;
 }
 
@@ -1862,11 +1864,13 @@ int movePC(int offsetY, int offsetX) { // returns 0 if successfully able to move
   return -1;
 }
 
+
 void game_loop(WINDOW* window)
 {
   character_t *c;
+  character_t *charArr[world.cur_map->charCount];
   pair_t d;
-  int tmpInp, successMove;
+  int tmpInp, successMove, charIndex, y, x;
   bool run = TRUE;
   bool invalidInput = TRUE;
 
@@ -1874,6 +1878,18 @@ void game_loop(WINDOW* window)
   keypad(window, TRUE);
   refresh();
   wrefresh(window);
+
+  //Fill the charArr with the current chracters on the map
+  charIndex = 0;
+  for (y = 0; y < MAP_Y; y++) {
+    for (x = 0; x < MAP_X; x++) {
+      if(world.cur_map->cmap[y][x] != NULL && world.cur_map->cmap[y][x]->npc != NULL) {
+        charArr[charIndex] = world.cur_map->cmap[y][x];
+        charIndex++;
+      }
+    }
+  }
+
   while (run) {
     c = heap_remove_min(&world.cur_map->turn);
     //    print_character(c);
@@ -1881,6 +1897,8 @@ void game_loop(WINDOW* window)
       print_map();
       refresh();
       while(invalidInput) {
+        wmove(window, 0, 0);
+        wrefresh(window);
         tmpInp = wgetch(window);
         switch(tmpInp){
           case 53:
@@ -1958,6 +1976,41 @@ void game_loop(WINDOW* window)
               break;
             }
             break;
+          case 116:
+            charIndex = 0;
+            do {
+              wmove(window, 0, 0);
+              wprintw(window, "NPC %d/%d: %c, ", charIndex + 1, world.cur_map->charCount, 
+                      charArr[charIndex]->symbol);
+              if(charArr[charIndex]->pos[dim_y] - c->pos[dim_y] >= 0) {
+                wprintw(window, "%d south and ", charArr[charIndex]->pos[dim_y] - c->pos[dim_y]);
+              } else {
+                wprintw(window, "%d north and ", c->pos[dim_y] - charArr[charIndex]->pos[dim_y] );
+              }
+              if(charArr[charIndex]->pos[dim_x] - c->pos[dim_x] >= 0) {
+                wprintw(window, "%d west\n", charArr[charIndex]->pos[dim_x] - c->pos[dim_x]);
+              } else {
+                wprintw(window, "%d east\n", c->pos[dim_x] - charArr[charIndex]->pos[dim_x] );
+              }
+              
+              wrefresh(window);
+              tmpInp = wgetch(window);
+              switch(tmpInp) {
+                case KEY_UP:
+                  if(charIndex > 0) {
+                    charIndex--;
+                  }
+                  break;
+                case KEY_DOWN:
+                  if(charIndex < world.cur_map->charCount - 1) {
+                    charIndex++;
+                  }
+                  break;
+                default:
+                  break;
+              }
+            }while(tmpInp != 27);
+            break;
           case 81:
             run = FALSE;
             invalidInput = FALSE;
@@ -1968,7 +2021,7 @@ void game_loop(WINDOW* window)
             break;
         }
         wmove(window, 0, 0);
-        wprintw(window, "Move: (%d) coord: (%d, %d)\n", successMove, c->pos[dim_y], c->pos[dim_x]);
+        //wprintw(window, " \n");
         wrefresh(window);
       }
       invalidInput = TRUE;
