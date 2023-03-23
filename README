@@ -1,8 +1,8 @@
-Assignment1.03 generates a PC, and the cost maps for 2 NPC's, rival and hiker.
+Assignment1.05 added color, trainer battles, and interfacing with the keyboard.
 
-Structures include map_t and queue_node_t
-This assignment performs Dijkstras to find the cost of traversing a path to the PC, 
-this is then repeated for all coordinates in the map to generate a cost map. 
+Structures include map_t, character_t, terrain_t
+This assignment takes in various inputs from the keyboard to control the PC movement 
+in all 8 directions. Additionally, trainer battles are started if collision occurs.
 
 Compile using make. 
 Author: Joseph Jennings (jtj9)
