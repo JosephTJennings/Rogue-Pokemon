@@ -121,6 +121,7 @@ typedef struct character {
   char symbol;
   int next_turn;
   int seq_num;
+  bool defeated;
 } character_t;
 
 typedef struct map {
@@ -532,6 +533,7 @@ void new_hiker()
   c->symbol = HIKER_SYMBOL;
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
+  c->defeated = FALSE;
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
 }
@@ -558,6 +560,7 @@ void new_rival()
   c->symbol = RIVAL_SYMBOL;
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
+  c->defeated = FALSE;
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
 }
@@ -582,6 +585,7 @@ void new_swimmer()
   c->symbol = SWIMMER_SYMBOL;
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
+  c->defeated = FALSE;
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
 }
@@ -623,6 +627,7 @@ void new_char_other()
   rand_dir(c->npc->dir);
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
+  c->defeated = FALSE;
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
 }
@@ -1864,6 +1869,20 @@ int movePC(int offsetY, int offsetX) { // returns 0 if successfully able to move
   return -1;
 }
 
+bool trainerBattle(int offsetY, int offsetX) {
+  character_t *c;
+  int16_t newX, newY;
+  c = &world.pc;
+  newX = c->pos[dim_x] + offsetX;
+  newY = c->pos[dim_y] + offsetY;
+  if(newX > 0 && newX < MAP_X && newY > 0 && newY < MAP_Y && world.cur_map->cmap[newY][newX] != NULL 
+    && world.cur_map->cmap[newY][newX]->defeated == FALSE) {
+    world.cur_map->cmap[newY][newX]->defeated = TRUE;
+    return true;
+  }
+  return false;
+}
+
 
 void game_loop(WINDOW* window)
 {
@@ -1873,6 +1892,7 @@ void game_loop(WINDOW* window)
   int tmpInp, successMove, charIndex, y, x, tmpIndex;
   bool run = TRUE;
   bool invalidInput = TRUE;
+  bool battle = FALSE;
 
   cbreak();
   keypad(window, TRUE);
@@ -1886,6 +1906,7 @@ void game_loop(WINDOW* window)
       print_map();
       refresh();
       while(invalidInput) {
+        battle = FALSE;
         wmove(window, 0, 0);
         wrefresh(window);
         tmpInp = wgetch(window);
@@ -1895,74 +1916,122 @@ void game_loop(WINDOW* window)
             break;
           case 55:
           case 121: // move up left
+            battle = trainerBattle(-1, -1);
             successMove = movePC(-1, -1);
             invalidInput = FALSE;
             if(successMove == -1) {
               invalidInput = TRUE;
               break;
             }
+            if(battle) {
+              do {
+                tmpInp = wgetch(window);
+              }while(tmpInp != 27);
+            }
             break;
           case 56:
           case 107: // move up
+            battle = trainerBattle(-1, 0);
             successMove = movePC(-1, 0);
             invalidInput = FALSE;
             if(successMove == -1) {
               invalidInput = TRUE;
               break;
             }
+            if(battle) {
+              do {
+                tmpInp = wgetch(window);
+              }while(tmpInp != 27);
+            }
             break;
           case 57:
           case 117:
+            battle = trainerBattle(-1, 1);
             successMove = movePC(-1, 1);
             invalidInput = FALSE;
             if(successMove == -1) {
               invalidInput = TRUE;
               break;
             }
+            if(battle) {
+              do {
+                tmpInp = wgetch(window);
+              }while(tmpInp != 27);
+            }
             break;
           case 54:
           case 108:
+            battle = trainerBattle(0, 1);
             successMove = movePC(0, 1);
             if(successMove == -1) {
               invalidInput = TRUE;
               break;
             }
+            if(battle) {
+              do {
+                tmpInp = wgetch(window);
+              }while(tmpInp != 27);
+            }
             invalidInput = FALSE;
             break;
           case 51:
           case 110:
+            battle = trainerBattle(1, 1);
             successMove = movePC(1, 1);
             invalidInput = FALSE;
             if(successMove == -1) {
               invalidInput = TRUE;
               break;
             }
+            if(battle) {
+              do {
+                tmpInp = wgetch(window);
+              }while(tmpInp != 27);
+            }
             break;
           case 50:
           case 106:
+            battle = trainerBattle(1, 0);
             successMove = movePC(1, 0);
             invalidInput = FALSE;
             if(successMove == -1) {
               invalidInput = TRUE;
               break;
             }
+            if(battle) {
+              do {
+                tmpInp = wgetch(window);
+              }while(tmpInp != 27);
+            }
             break;
           case 49:
           case 98:
+            battle = trainerBattle(1, -1);
             successMove = movePC(1, -1);
             invalidInput = FALSE;
             if(successMove == -1) {
               invalidInput = TRUE;
               break;
             }
+            if(battle) {
+              do {
+                tmpInp = wgetch(window);
+              }while(tmpInp != 27);
+            }
             break;
           case 52:
           case 104:
+            battle = trainerBattle(0, -1);
             successMove = movePC(0, -1);
             invalidInput = FALSE;
             if(successMove == -1) {
               invalidInput = TRUE;
               break;
+            }
+            if(battle) {
+              do {
+                tmpInp = wgetch(window);
+              }while(tmpInp != 27);
             }
             break;
           case 62:
