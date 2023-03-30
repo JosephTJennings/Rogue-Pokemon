@@ -1,9 +1,9 @@
 #ifndef CHARACTER_H
 # define CHARACTER_H
 
-# include <stdint.h>
+#include <stdint.h>
 
-# include "poke327.h"
+#include "poke327.h"
 
 typedef enum __attribute__ ((__packed__)) movement_type {
   move_hiker,
