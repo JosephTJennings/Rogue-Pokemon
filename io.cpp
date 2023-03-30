@@ -475,7 +475,7 @@ uint32_t move_pc_dir(uint32_t input, pair_t dest)
 void io_handle_input(pair_t dest)
 {
   uint32_t turn_not_consumed;
-  int key;
+  int key, x, y;
 
   do {
     switch (key = getch()) {
@@ -546,6 +546,15 @@ void io_handle_input(pair_t dest)
       io_teleport_pc(dest);
       turn_not_consumed = 0;
       break;
+    case 'f':
+      x = getch();
+      y = getch();
+      if (x >= -(WORLD_SIZE / 2) && x <= WORLD_SIZE / 2 &&
+          y >= -(WORLD_SIZE / 2) && y <= WORLD_SIZE / 2) {
+        world.cur_idx[dim_x] = x + (WORLD_SIZE / 2);
+        world.cur_idx[dim_y] = y + (WORLD_SIZE / 2);
+        new_map(1);
+      } 
     case 'm':
       
     case 'q':

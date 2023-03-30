@@ -1017,8 +1017,10 @@ int new_map(int teleport)
   if (teleport) {
     do {
       world.cur_map->cmap[world.pc.pos[dim_y]][world.pc.pos[dim_x]] = NULL;
-      world.pc.pos[dim_x] = rand_range(1, MAP_X - 2);
-      world.pc.pos[dim_y] = rand_range(1, MAP_Y - 2);
+      do{
+        world.pc.pos[dim_x] = rand_range(1, MAP_X - 2);
+        world.pc.pos[dim_y] = rand_range(1, MAP_Y - 2);
+      }while(world.cur_map->map[world.pc.pos[dim_y]][world.pc.pos[dim_x]] != ter_path);
     } while (world.cur_map->cmap[world.pc.pos[dim_y]][world.pc.pos[dim_x]] ||
              (move_cost[char_pc][world.cur_map->map[world.pc.pos[dim_y]]
                                                    [world.pc.pos[dim_x]]] ==
