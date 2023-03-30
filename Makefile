@@ -3,7 +3,7 @@ CXX = g++
 ECHO = echo
 RM = rm -f
 
-TERM = "S2019"
+TERM = "S2022"
 
 CFLAGS = -Wall -Werror -ggdb -funroll-loops -DTERM=$(TERM)
 CXXFLAGS = -Wall -Werror -ggdb -funroll-loops -DTERM=$(TERM)
@@ -11,7 +11,7 @@ CXXFLAGS = -Wall -Werror -ggdb -funroll-loops -DTERM=$(TERM)
 LDFLAGS = -lncurses
 
 BIN = poke327
-OBJS = poke327.o heap.o
+OBJS = poke327.o heap.o character.o io.o
 
 all: $(BIN) etags
 
