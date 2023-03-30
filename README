@@ -1,8 +1,8 @@
-Assignment1.05 added color, trainer battles, and interfacing with the keyboard.
+Assignment 1.06 transitioned to C++ code and allowed trainers to move through gates.
 
 Structures include map_t, character_t, terrain_t
 This assignment takes in various inputs from the keyboard to control the PC movement 
-in all 8 directions. Additionally, trainer battles are started if collision occurs.
+as well as commands to fly to new maps again and leave through gates.
 
 Compile using make. 
 Author: Joseph Jennings (jtj9)
