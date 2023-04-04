@@ -1,9 +1,9 @@
 #ifndef CHARACTER_H
 # define CHARACTER_H
 
-#include <stdint.h>
+# include <stdint.h>
 
-#include "poke327.h"
+# include "pair.h"
 
 typedef enum __attribute__ ((__packed__)) movement_type {
   move_hiker,
@@ -28,27 +28,31 @@ typedef enum __attribute__ ((__packed__)) character_type {
 
 extern const char *char_type_name[num_character_types];
 
-extern int32_t move_cost[num_character_types][num_terrain_types];
+class character {
+ public:
+  virtual ~character() {}
+  pair_t pos;
+  char symbol;
+  int next_turn;
+  int seq_num;
+};
 
-typedef struct npc {
+class npc : public character {
+ public:
   character_type_t ctype;
   movement_type_t mtype;
   int defeated;
   pair_t dir;
-} npc_t;
+};
 
-typedef struct pc {
-} pc_t;
-
-/* character is defined in poke327.h to allow an instance of character
- * in world without including character.h in poke327.h                 */
+class pc : public character {
+ public:
+};
 
 int32_t cmp_char_turns(const void *key, const void *with);
 void delete_character(void *v);
+typedef struct map map_t;
 void pathfind(map_t *m);
-
-extern void (*move_func[num_movement_types])(character_t *, pair_t);
-
 int pc_move(char);
 
 #endif

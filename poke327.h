@@ -5,14 +5,8 @@
 # include <assert.h>
 
 # include "heap.h"
-
-typedef struct character character_t;
-
-#define malloc(size) ({          \
-  void *_tmp;                    \
-  assert((_tmp = malloc(size))); \
-  _tmp;                          \
-})
+# include "pair.h"
+# include "character.h"
 
 /* Returns true if random float in [0,1] is less than *
  * numerator/denominator.  Uses only integer math.    */
@@ -23,14 +17,6 @@ typedef struct character character_t;
 # define rand_range(min, max) ((rand() % (((max) + 1) - (min))) + (min))
 
 # define UNUSED(f) ((void) f)
-
-typedef enum dim {
-  dim_x,
-  dim_y,
-  num_dims
-} dim_t;
-
-typedef int16_t pair_t[num_dims];
 
 #define MAP_X              80
 #define MAP_Y              21
@@ -86,26 +72,18 @@ typedef enum __attribute__ ((__packed__)) terrain_type {
   ter_debug
 } terrain_type_t;
 
+extern int32_t move_cost[num_character_types][num_terrain_types];
+
+extern void (*move_func[num_movement_types])(character *, pair_t);
+
 typedef struct map {
   terrain_type_t map[MAP_Y][MAP_X];
   uint8_t height[MAP_Y][MAP_X];
-  character_t *cmap[MAP_Y][MAP_X];
+  character *cmap[MAP_Y][MAP_X];
   heap_t turn;
   int32_t num_trainers;
   int8_t n, s, e, w;
 } map_t;
-
-typedef struct npc npc_t;
-typedef struct pc pc_t;
-/* Here instead of character.h to abvoid including character.h */
-typedef struct character {
-  npc_t *npc;
-  pc_t *pc;
-  pair_t pos;
-  char symbol;
-  int next_turn;
-  int seq_num;
-} character_t;
 
 typedef struct world {
   map_t *world[WORLD_SIZE][WORLD_SIZE];
@@ -115,7 +93,7 @@ typedef struct world {
    * we only need one pair at any given time.      */
   int hiker_dist[MAP_Y][MAP_X];
   int rival_dist[MAP_Y][MAP_X];
-  character_t pc;
+  class pc pc;
   int quit;
   int add_trainer_prob;
   int char_seq_num;

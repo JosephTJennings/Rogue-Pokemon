@@ -102,19 +102,19 @@ static void io_print_message_queue(uint32_t y, uint32_t x)
  **************************************************************************/
 static int compare_trainer_distance(const void *v1, const void *v2)
 {
-  const character_t *const *c1 = (character_t **)v1;
-  const character_t *const *c2 = (character_t **)v2;
+  const character *const *c1 = (const character * const *) v1;
+  const character *const *c2 = (const character * const *) v2;
 
   return (world.rival_dist[(*c1)->pos[dim_y]][(*c1)->pos[dim_x]] -
           world.rival_dist[(*c2)->pos[dim_y]][(*c2)->pos[dim_x]]);
 }
 
-static character_t *io_nearest_visible_trainer()
+static character *io_nearest_visible_trainer()
 {
-  character_t **c, *n;
+  character **c, *n;
   uint32_t x, y, count;
 
-  c =  (character_t **) malloc(world.cur_map->num_trainers * sizeof (*c));
+  c = (character **) malloc(world.cur_map->num_trainers * sizeof (*c));
 
   /* Get a linear list of trainers */
   for (count = 0, y = 1; y < MAP_Y - 1; y++) {
@@ -139,7 +139,7 @@ static character_t *io_nearest_visible_trainer()
 void io_display()
 {
   uint32_t y, x;
-  character_t *c;
+  character *c;
 
   clear();
   for (y = 0; y < MAP_Y; y++) {
@@ -204,8 +204,6 @@ void io_display()
           attroff(COLOR_PAIR(COLOR_CYAN));
           break;
         default:
- /* Use zero as an error symbol, since it stands out somewhat, and it's *
-  * not otherwise used.                                                 */
           attron(COLOR_PAIR(COLOR_CYAN));
           mvaddch(y + 1, x, ERROR_SYMBOL);
           attroff(COLOR_PAIR(COLOR_CYAN)); 
@@ -290,13 +288,13 @@ static void io_scroll_trainer_list(char (*s)[40], uint32_t count)
   }
 }
 
-static void io_list_trainers_display(character_t **c,
+static void io_list_trainers_display(npc **c,
                                      uint32_t count)
 {
   uint32_t i;
   char (*s)[40]; /* pointer to array of 40 char */
 
-  s = (char (*)[40]) malloc(count * sizeof (*s)); //??
+  s = (char (*)[40]) malloc(count * sizeof (*s));
 
   mvprintw(3, 19, " %-40s ", "");
   /* Borrow the first element of our array for this string: */
@@ -306,7 +304,7 @@ static void io_list_trainers_display(character_t **c,
 
   for (i = 0; i < count; i++) {
     snprintf(s[i], 40, "%16s %c: %2d %s by %2d %s",
-             char_type_name[c[i]->npc->ctype],
+             char_type_name[c[i]->ctype],
              c[i]->symbol,
              abs(c[i]->pos[dim_y] - world.pc.pos[dim_y]),
              ((c[i]->pos[dim_y] - world.pc.pos[dim_y]) <= 0 ?
@@ -338,17 +336,17 @@ static void io_list_trainers_display(character_t **c,
 
 static void io_list_trainers()
 {
-  character_t **c;
+  npc **c;
   uint32_t x, y, count;
 
-  c = (character_t **) malloc(world.cur_map->num_trainers * sizeof (*c));
+  c = (npc **) malloc(world.cur_map->num_trainers * sizeof (*c));
 
   /* Get a linear list of trainers */
   for (count = 0, y = 1; y < MAP_Y - 1; y++) {
     for (x = 1; x < MAP_X - 1; x++) {
       if (world.cur_map->cmap[y][x] && world.cur_map->cmap[y][x] !=
           &world.pc) {
-        c[count++] = world.cur_map->cmap[y][x];
+        c[count++] = dynamic_cast<npc *> (world.cur_map->cmap[y][x]);
       }
     }
   }
@@ -378,23 +376,18 @@ void io_pokemon_center()
   getch();
 }
 
-void io_battle(character_t *aggressor, character_t *defender)
+void io_battle(character *aggressor, character *defender)
 {
-  character_t *npc;
+  npc *n = (npc *) ((aggressor == &world.pc) ? defender : aggressor);
 
   io_display();
   mvprintw(0, 0, "Aww, how'd you get so strong?  You and your pokemon must share a special bond!");
   refresh();
   getch();
-  if (aggressor->pc) {
-    npc = defender;
-  } else {
-    npc = aggressor;
-  }
 
-  npc->npc->defeated = 1;
-  if (npc->npc->ctype == char_hiker || npc->npc->ctype == char_rival) {
-    npc->npc->mtype = move_wander;
+  n->defeated = 1;
+  if (n->ctype == char_hiker || n->ctype == char_rival) {
+    n->mtype = move_wander;
   }
 }
 
@@ -446,17 +439,13 @@ uint32_t move_pc_dir(uint32_t input, pair_t dest)
     break;
   }
 
-  if (world.cur_map->map[dest[dim_y]][dest[dim_x]] == ter_gate) {
-    /* Can't leave the map */  
-    return 1;
-  }
-
   if (world.cur_map->cmap[dest[dim_y]][dest[dim_x]]) {
-    if (world.cur_map->cmap[dest[dim_y]][dest[dim_x]]->npc &&
-        world.cur_map->cmap[dest[dim_y]][dest[dim_x]]->npc->defeated) {
+    if (dynamic_cast<npc *> (world.cur_map->cmap[dest[dim_y]][dest[dim_x]]) &&
+        ((npc *) world.cur_map->cmap[dest[dim_y]][dest[dim_x]])->defeated) {
       // Some kind of greeting here would be nice
       return 1;
-    } else if (world.cur_map->cmap[dest[dim_y]][dest[dim_x]]->npc) {
+    } else if ((dynamic_cast<npc *>
+                (world.cur_map->cmap[dest[dim_y]][dest[dim_x]]))) {
       io_battle(&world.pc, world.cur_map->cmap[dest[dim_y]][dest[dim_x]]);
       // Not actually moving, so set dest back to PC position
       dest[dim_x] = world.pc.pos[dim_x];
@@ -472,10 +461,47 @@ uint32_t move_pc_dir(uint32_t input, pair_t dest)
   return 0;
 }
 
+void io_teleport_world(pair_t dest)
+{
+  /* mvscanw documentation is unclear about return values.  I believe *
+   * that the return value works the same way as scanf, but instead   *
+   * of counting on that, we'll initialize x and y to out of bounds   *
+   * values and accept their updates only if in range.                */
+  int x = INT_MAX, y = INT_MAX;
+  
+  world.cur_map->cmap[world.pc.pos[dim_y]][world.pc.pos[dim_x]] = NULL;
+
+  echo();
+  curs_set(1);
+  do {
+    mvprintw(0, 0, "Enter x [-200, 200]:           ");
+    refresh();
+    mvscanw(0, 21, "%d", &x);
+  } while (x < -200 || x > 200);
+  do {
+    mvprintw(0, 0, "Enter y [-200, 200]:          ");
+    refresh();
+    mvscanw(0, 21, "%d", &y);
+  } while (y < -200 || y > 200);
+
+  refresh();
+  noecho();
+  curs_set(0);
+
+  x += 200;
+  y += 200;
+
+  world.cur_idx[dim_x] = x;
+  world.cur_idx[dim_y] = y;
+
+  new_map(1);
+  io_teleport_pc(dest);
+}
+
 void io_handle_input(pair_t dest)
 {
   uint32_t turn_not_consumed;
-  int key, x, y;
+  int key;
 
   do {
     switch (key = getch()) {
@@ -547,16 +573,10 @@ void io_handle_input(pair_t dest)
       turn_not_consumed = 0;
       break;
     case 'f':
-      x = getch();
-      y = getch();
-      if (x >= -(WORLD_SIZE / 2) && x <= WORLD_SIZE / 2 &&
-          y >= -(WORLD_SIZE / 2) && y <= WORLD_SIZE / 2) {
-        world.cur_idx[dim_x] = x + (WORLD_SIZE / 2);
-        world.cur_idx[dim_y] = y + (WORLD_SIZE / 2);
-        new_map(1);
-      } 
-    case 'm':
-      
+      /* Fly to any map in the world.                                */
+      io_teleport_world(dest);
+      turn_not_consumed = 0;
+      break;    
     case 'q':
       /* Demonstrate use of the message queue.  You can use this for *
        * printf()-style debugging (though gdb is probably a better   *

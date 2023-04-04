@@ -46,7 +46,7 @@ static void dijkstra_path(map_t *m, pair_t from, pair_t to)
   static path_t path[MAP_Y][MAP_X], *p;
   static uint32_t initialized = 0;
   heap_t h;
-  int32_t x, y;
+  uint16_t x, y;
 
   if (!initialized) {
     for (y = 0; y < MAP_Y; y++) {
@@ -281,7 +281,7 @@ static int smooth_height(map_t *m)
 
     if (x - 1 >= 0 && y - 1 >= 0 && !height[y - 1][x - 1]) {
       height[y - 1][x - 1] = i;
-      tail->next = (queue_node *) malloc(sizeof (*tail));
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
       tail = tail->next;
       tail->next = NULL;
       tail->x = x - 1;
@@ -289,7 +289,7 @@ static int smooth_height(map_t *m)
     }
     if (x - 1 >= 0 && !height[y][x - 1]) {
       height[y][x - 1] = i;
-      tail->next = (queue_node *) malloc(sizeof (*tail));
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
       tail = tail->next;
       tail->next = NULL;
       tail->x = x - 1;
@@ -297,7 +297,7 @@ static int smooth_height(map_t *m)
     }
     if (x - 1 >= 0 && y + 1 < MAP_Y && !height[y + 1][x - 1]) {
       height[y + 1][x - 1] = i;
-      tail->next = (queue_node *) malloc(sizeof (*tail));
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
       tail = tail->next;
       tail->next = NULL;
       tail->x = x - 1;
@@ -305,7 +305,7 @@ static int smooth_height(map_t *m)
     }
     if (y - 1 >= 0 && !height[y - 1][x]) {
       height[y - 1][x] = i;
-      tail->next = (queue_node *) malloc(sizeof (*tail));
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
       tail = tail->next;
       tail->next = NULL;
       tail->x = x;
@@ -313,7 +313,7 @@ static int smooth_height(map_t *m)
     }
     if (y + 1 < MAP_Y && !height[y + 1][x]) {
       height[y + 1][x] = i;
-      tail->next = (queue_node *) malloc(sizeof (*tail));
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
       tail = tail->next;
       tail->next = NULL;
       tail->x = x;
@@ -321,7 +321,7 @@ static int smooth_height(map_t *m)
     }
     if (x + 1 < MAP_X && y - 1 >= 0 && !height[y - 1][x + 1]) {
       height[y - 1][x + 1] = i;
-      tail->next = (queue_node *) malloc(sizeof (*tail));
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
       tail = tail->next;
       tail->next = NULL;
       tail->x = x + 1;
@@ -329,7 +329,7 @@ static int smooth_height(map_t *m)
     }
     if (x + 1 < MAP_X && !height[y][x + 1]) {
       height[y][x + 1] = i;
-      tail->next = (queue_node *) malloc(sizeof (*tail));
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
       tail = tail->next;
       tail->next = NULL;
       tail->x = x + 1;
@@ -337,7 +337,7 @@ static int smooth_height(map_t *m)
     }
     if (x + 1 < MAP_X && y + 1 < MAP_Y && !height[y + 1][x + 1]) {
       height[y + 1][x + 1] = i;
-      tail->next = (queue_node *) malloc(sizeof (*tail));
+      tail->next = (queue_node_t *) malloc(sizeof (*tail));
       tail = tail->next;
       tail->next = NULL;
       tail->x = x + 1;
@@ -557,20 +557,20 @@ static int map_terrain(map_t *m, int8_t n, int8_t s, int8_t e, int8_t w)
   while (head) {
     x = head->x;
     y = head->y;
-    i = m->map[y][x];
+    type = m->map[y][x];
     
     if (x - 1 >= 0 && !m->map[y][x - 1]) {
       if ((rand() % 100) < 80) {
-        m->map[y][x - 1] = (terrain_type_t) i;
-        tail->next = (queue_node *) malloc(sizeof (*tail));
+        m->map[y][x - 1] = type;
+        tail->next = (queue_node_t *) malloc(sizeof (*tail));
         tail = tail->next;
         tail->next = NULL;
         tail->x = x - 1;
         tail->y = y;
       } else if (!added_current) {
         added_current = 1;
-        m->map[y][x] = (terrain_type_t) i;
-        tail->next = (queue_node *) malloc(sizeof (*tail));
+        m->map[y][x] = type;
+        tail->next = (queue_node_t *) malloc(sizeof (*tail));
         tail = tail->next;
         tail->next = NULL;
         tail->x = x;
@@ -580,16 +580,16 @@ static int map_terrain(map_t *m, int8_t n, int8_t s, int8_t e, int8_t w)
 
     if (y - 1 >= 0 && !m->map[y - 1][x]) {
       if ((rand() % 100) < 20) {
-        m->map[y - 1][x] = (terrain_type_t) i;
-        tail->next = (queue_node *) malloc(sizeof (*tail));
+        m->map[y - 1][x] = type;
+        tail->next = (queue_node_t *) malloc(sizeof (*tail));
         tail = tail->next;
         tail->next = NULL;
         tail->x = x;
         tail->y = y - 1;
       } else if (!added_current) {
         added_current = 1;
-        m->map[y][x] = (terrain_type_t) i;
-        tail->next = (queue_node *) malloc(sizeof (*tail));
+        m->map[y][x] = type;
+        tail->next = (queue_node_t *) malloc(sizeof (*tail));
         tail = tail->next;
         tail->next = NULL;
         tail->x = x;
@@ -599,16 +599,16 @@ static int map_terrain(map_t *m, int8_t n, int8_t s, int8_t e, int8_t w)
 
     if (y + 1 < MAP_Y && !m->map[y + 1][x]) {
       if ((rand() % 100) < 20) {
-        m->map[y + 1][x] = (terrain_type_t) i;
-        tail->next = (queue_node *) malloc(sizeof (*tail));
+        m->map[y + 1][x] = type;
+        tail->next = (queue_node_t *) malloc(sizeof (*tail));
         tail = tail->next;
         tail->next = NULL;
         tail->x = x;
         tail->y = y + 1;
       } else if (!added_current) {
         added_current = 1;
-        m->map[y][x] = (terrain_type_t) i;
-        tail->next = (queue_node *) malloc(sizeof (*tail));
+        m->map[y][x] = type;
+        tail->next = (queue_node_t *) malloc(sizeof (*tail));
         tail = tail->next;
         tail->next = NULL;
         tail->x = x;
@@ -618,16 +618,16 @@ static int map_terrain(map_t *m, int8_t n, int8_t s, int8_t e, int8_t w)
 
     if (x + 1 < MAP_X && !m->map[y][x + 1]) {
       if ((rand() % 100) < 80) {
-        m->map[y][x + 1] = (terrain_type_t) i;
-        tail->next = (queue_node *) malloc(sizeof (*tail));
+        m->map[y][x + 1] = type;
+        tail->next = (queue_node_t *) malloc(sizeof (*tail));
         tail = tail->next;
         tail->next = NULL;
         tail->x = x + 1;
         tail->y = y;
       } else if (!added_current) {
         added_current = 1;
-        m->map[y][x] = (terrain_type_t) i;
-        tail->next = (queue_node *) malloc(sizeof (*tail));
+        m->map[y][x] = type;
+        tail->next = (queue_node_t *) malloc(sizeof (*tail));
         tail = tail->next;
         tail->next = NULL;
         tail->x = x;
@@ -664,19 +664,19 @@ static int map_terrain(map_t *m, int8_t n, int8_t s, int8_t e, int8_t w)
 
   if (n != -1) {
     mapxy(n,         0        ) = ter_gate;
-    mapxy(n,         1        ) = ter_gate;
+    mapxy(n,         1        ) = ter_path;
   }
   if (s != -1) {
     mapxy(s,         MAP_Y - 1) = ter_gate;
-    mapxy(s,         MAP_Y - 2) = ter_gate;
+    mapxy(s,         MAP_Y - 2) = ter_path;
   }
   if (w != -1) {
     mapxy(0,         w        ) = ter_gate;
-    mapxy(1,         w        ) = ter_gate;
+    mapxy(1,         w        ) = ter_path;
   }
   if (e != -1) {
     mapxy(MAP_X - 1, e        ) = ter_gate;
-    mapxy(MAP_X - 2, e        ) = ter_gate;
+    mapxy(MAP_X - 2, e        ) = ter_path;
   }
 
   return 0;
@@ -725,7 +725,7 @@ void rand_pos(pair_t pos)
 void new_hiker()
 {
   pair_t pos;
-  character_t *c;
+  npc *c;
 
   do {
     rand_pos(pos);
@@ -734,16 +734,14 @@ void new_hiker()
            pos[dim_x] < 3 || pos[dim_x] > MAP_X - 4            ||
            pos[dim_y] < 3 || pos[dim_y] > MAP_Y - 4);
 
-  world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c = (character_t*) malloc(sizeof (*c));
-  c->npc = (npc_t*) malloc(sizeof (*c->npc));
+  world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c = new npc;
   c->pos[dim_y] = pos[dim_y];
   c->pos[dim_x] = pos[dim_x];
-  c->npc->ctype = char_hiker;
-  c->npc->mtype = move_hiker;
-  c->npc->dir[dim_x] = 0;
-  c->npc->dir[dim_y] = 0;
-  c->npc->defeated = 0;
-  c->pc = NULL;
+  c->ctype = char_hiker;
+  c->mtype = move_hiker;
+  c->dir[dim_x] = 0;
+  c->dir[dim_y] = 0;
+  c->defeated = 0;
   c->symbol = 'h';
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
@@ -756,7 +754,7 @@ void new_hiker()
 void new_rival()
 {
   pair_t pos;
-  character_t *c;
+  npc *c;
 
   do {
     rand_pos(pos);
@@ -766,16 +764,14 @@ void new_rival()
            pos[dim_x] < 3 || pos[dim_x] > MAP_X - 4            ||
            pos[dim_y] < 3 || pos[dim_y] > MAP_Y - 4);
 
-  world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c = (character_t*) malloc(sizeof (*c));
-  c->npc = (npc_t*) malloc(sizeof (*c->npc));
+  world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c = new npc;
   c->pos[dim_y] = pos[dim_y];
   c->pos[dim_x] = pos[dim_x];
-  c->npc->ctype = char_rival;
-  c->npc->mtype = move_rival;
-  c->npc->dir[dim_x] = 0;
-  c->npc->dir[dim_y] = 0;
-  c->npc->defeated = 0;
-  c->pc = NULL;
+  c->ctype = char_rival;
+  c->mtype = move_rival;
+  c->dir[dim_x] = 0;
+  c->dir[dim_y] = 0;
+  c->defeated = 0;
   c->symbol = 'r';
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
@@ -786,23 +782,21 @@ void new_rival()
 void new_swimmer()
 {
   pair_t pos;
-  character_t *c;
+  npc *c;
 
   do {
     rand_pos(pos);
   } while (world.cur_map->map[pos[dim_y]][pos[dim_x]] != ter_water ||
            world.cur_map->cmap[pos[dim_y]][pos[dim_x]]);
 
-  world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c = (character_t*) malloc(sizeof (*c));
-  c->npc = (npc_t*) malloc(sizeof (*c->npc));
+  world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c = new npc;
   c->pos[dim_y] = pos[dim_y];
   c->pos[dim_x] = pos[dim_x];
-  c->npc->ctype = char_swimmer;
-  c->npc->mtype = move_swim;
-  c->npc->dir[dim_x] = 0;
-  c->npc->dir[dim_y] = 0;
-  c->npc->defeated = 0;
-  c->pc = NULL;
+  c->ctype = char_swimmer;
+  c->mtype = move_swim;
+  c->dir[dim_x] = 0;
+  c->dir[dim_y] = 0;
+  c->defeated = 0;
   c->symbol = SWIMMER_SYMBOL;
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
@@ -813,7 +807,7 @@ void new_swimmer()
 void new_char_other()
 {
   pair_t pos;
-  character_t *c;
+  npc *c;
 
   do {
     rand_pos(pos);
@@ -823,32 +817,30 @@ void new_char_other()
            pos[dim_x] < 3 || pos[dim_x] > MAP_X - 4            ||
            pos[dim_y] < 3 || pos[dim_y] > MAP_Y - 4);
 
-  world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c = (character_t*) malloc(sizeof (*c));
-  c->npc = (npc_t*) malloc(sizeof (*c->npc));
+  world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c = new npc;
   c->pos[dim_y] = pos[dim_y];
   c->pos[dim_x] = pos[dim_x];
-  c->npc->ctype = char_other;
+  c->ctype = char_other;
   switch (rand() % 4) {
   case 0:
-    c->npc->mtype = move_pace;
+    c->mtype = move_pace;
     c->symbol = PACER_SYMBOL;
     break;
   case 1:
-    c->npc->mtype = move_wander;
+    c->mtype = move_wander;
     c->symbol = WANDERER_SYMBOL;
     break;
   case 2:
-    c->npc->mtype = move_sentry;
+    c->mtype = move_sentry;
     c->symbol = SENTRY_SYMBOL;
     break;
   case 3:
-    c->npc->mtype = move_explore;
+    c->mtype = move_explore;
     c->symbol = EXPLORER_SYMBOL;
     break;
   }
-  rand_dir(c->npc->dir);
-  c->npc->defeated = 0;
-  c->pc = NULL;
+  rand_dir(c->dir);
+  c->defeated = 0;
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
   heap_insert(&world.cur_map->turn, c);
@@ -899,8 +891,6 @@ void init_pc()
   world.pc.pos[dim_x] = x;
   world.pc.pos[dim_y] = y;
   world.pc.symbol = '@';
-  world.pc.pc = (pc_t*) malloc(sizeof (*world.pc.pc));
-  world.pc.npc = NULL;
 
   world.cur_map->cmap[y][x] = &world.pc;
   world.pc.next_turn = 0;
@@ -910,7 +900,7 @@ void init_pc()
 
 void place_pc()
 {
-  character_t *c;
+  character *c;
 
   if (world.pc.pos[dim_x] == 1) {
     world.pc.pos[dim_x] = MAP_X - 2;
@@ -924,7 +914,7 @@ void place_pc()
 
   world.cur_map->cmap[world.pc.pos[dim_y]][world.pc.pos[dim_x]] = &world.pc;
 
-  if ((c = (character_t *) heap_peek_min(&world.cur_map->turn))) {
+  if ((c = (character *) heap_peek_min(&world.cur_map->turn))) {
     world.pc.next_turn = c->next_turn;
   } else {
     world.pc.next_turn = 0;
@@ -1017,10 +1007,8 @@ int new_map(int teleport)
   if (teleport) {
     do {
       world.cur_map->cmap[world.pc.pos[dim_y]][world.pc.pos[dim_x]] = NULL;
-      do{
-        world.pc.pos[dim_x] = rand_range(1, MAP_X - 2);
-        world.pc.pos[dim_y] = rand_range(1, MAP_Y - 2);
-      }while(world.cur_map->map[world.pc.pos[dim_y]][world.pc.pos[dim_x]] != ter_path);
+      world.pc.pos[dim_x] = rand_range(1, MAP_X - 2);
+      world.pc.pos[dim_y] = rand_range(1, MAP_Y - 2);
     } while (world.cur_map->cmap[world.pc.pos[dim_y]][world.pc.pos[dim_x]] ||
              (move_cost[char_pc][world.cur_map->map[world.pc.pos[dim_y]]
                                                    [world.pc.pos[dim_x]]] ==
@@ -1048,13 +1036,10 @@ void delete_world()
 {
   int x, y;
 
-  //Only correct because current game never leaves the initial map
-  //Need to iterate over all maps in 1.05+
-  heap_delete(&world.cur_map->turn);
-
   for (y = 0; y < WORLD_SIZE; y++) {
     for (x = 0; x < WORLD_SIZE; x++) {
       if (world.world[y][x]) {
+        heap_delete(&world.world[y][x]->turn);
         free(world.world[y][x]);
         world.world[y][x] = NULL;
       }
@@ -1094,24 +1079,48 @@ void print_rival_dist()
   }
 }
 
+void leave_map(pair_t d)
+{
+  if (d[dim_x] == 0) {
+    world.cur_idx[dim_x]--;
+  } else if (d[dim_y] == 0) {
+    world.cur_idx[dim_y]--;
+  } else if (d[dim_x] == MAP_X - 1) {
+    world.cur_idx[dim_x]++;
+  } else {
+    world.cur_idx[dim_y]++;
+  }
+  new_map(0);
+}
+
 void game_loop()
 {
-  character_t *c;
+  character *c;
+  npc *n;
+  pc *p;
   pair_t d;
   
   while (!world.quit) {
-    c = (character_t *) heap_remove_min(&world.cur_map->turn);
+    c = (character *) heap_remove_min(&world.cur_map->turn);
+    n = dynamic_cast<npc *> (c);
+    p = dynamic_cast<pc *> (c);
 
-    move_func[c->npc ? c->npc->mtype : move_pc](c, d);
+    move_func[n ? n->mtype : move_pc](c, d);
 
     world.cur_map->cmap[c->pos[dim_y]][c->pos[dim_x]] = NULL;
+    if (p && (d[dim_x] == 0 || d[dim_x] == MAP_X - 1 ||
+              d[dim_y] == 0 || d[dim_y] == MAP_Y - 1)) {
+      leave_map(d);
+      d[dim_x] = c->pos[dim_x];
+      d[dim_y] = c->pos[dim_y];
+    }
     world.cur_map->cmap[d[dim_y]][d[dim_x]] = c;
 
-    if (c->pc) {
+    if (p) {
       pathfind(world.cur_map);
     }
 
-    c->next_turn += move_cost[c->npc ? c->npc->ctype : char_pc]
+    c->next_turn += move_cost[n ? n->ctype : char_pc]
                              [world.cur_map->map[d[dim_y]][d[dim_x]]];
 
     c->pos[dim_y] = d[dim_y];
