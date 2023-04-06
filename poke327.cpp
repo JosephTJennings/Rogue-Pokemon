@@ -1156,9 +1156,11 @@ int main(int argc, char *argv[])
     std::string filePath = "/share/cs327";
     if(std::filesystem::is_directory(filePath)) {
       filePath = filePath + "/pokedex/data/csv/";
+      cout << "filePath: " << filePath;
     }else if(const char* env_p = std::getenv("/.poke327/")) {
       filePath = env_p;
       filePath = filePath + "pokedex/data/csv/";
+      cout << "filePath: " << filePath;
     } else {
       cout << "Error: Could not find filepath.\n";
       return 0;

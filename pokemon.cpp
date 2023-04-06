@@ -18,7 +18,7 @@ static vector<pokemon> getPokemonCSV(string filePath) {
     vector<string> row;
     fstream file;
     string line, element;
-
+    cout << "Pokemon function reached! \n";
     file.open(filePath + "pokemon.csv", ios::in);
 
     getline(file, line);
