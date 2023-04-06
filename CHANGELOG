@@ -1,3 +1,180 @@
+commit f370f8c699d4632f39800bff4800b1db9ae22d27
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Thu Apr 6 01:02:01 2023 -0500
+
+    Fixed filePath for pyrite.
+
+commit 01fc085303992c5a597e4bddd9eb490f5ebd02fd
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Thu Apr 6 00:43:58 2023 -0500
+
+    Testing filePath on pyrite.
+
+commit c7f2a3e1afad98957783f589dc8131680298b6f1
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Thu Apr 6 00:41:21 2023 -0500
+
+    Testing functions for pyrite.
+
+commit 4de7a95f6f43b75a6e07539fe71074f98f31c5bd
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Thu Apr 6 00:32:19 2023 -0500
+
+    Added support for the required filepaths.
+
+commit a70a00e00b6f2b849b25223b0134fe172f813523
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Thu Apr 6 00:11:32 2023 -0500
+
+    Added csv parsing for moves, experience, stats,
+    and type_names.
+    Additionally, added ability to parse input from command line.
+
+commit 4796301d1e514b3fc50e4acb1075c464df1d474c
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Tue Apr 4 22:47:51 2023 -0500
+
+    Added support for parsing all pokemon related CSV's.
+
+commit 341554d34f4d29a249f41dea8a803aa110307427
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Mon Apr 3 21:48:30 2023 -0500
+
+    Merged with Dr. Shaeffer.
+
+commit ae485b873b11b3dd52a9c0464ed5c5226c06b593
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Thu Mar 30 08:07:10 2023 -0500
+
+    Added ability to fly.
+    Need to add support for more than 1 char.
+
+commit b8c72204d91d412b27d4beeef66ed2fe8575c891
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Wed Mar 29 23:31:36 2023 -0500
+
+    Updated ReadME
+
+commit 87753b8f2a7472f917f4c5c7a0cba6fe234d923e
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Wed Mar 29 23:30:28 2023 -0500
+
+    Converted C code to C++.
+
+commit 02da322da672d1cc69821822bb3569941b9ac4f1
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Wed Mar 29 21:50:41 2023 -0500
+
+    Merged with Dr. Shaeffer
+
+commit 9751682a6a619fa59894a37845af35931746f3e0
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Wed Mar 22 23:40:31 2023 -0500
+
+    Added trainer battles.
+
+commit 798ba715efb4456d1de595ac26e67b02445f64d4
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Wed Mar 22 22:48:33 2023 -0500
+
+    Updated readme.
+
+commit 5dd83d0a154e652850b3ba7e3f357d744153afb7
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Wed Mar 22 01:20:48 2023 -0500
+
+    Added support for entering and leaving a
+    pokemart or center.
+
+commit 3cb3daa511d1fd4598aa8b055771bb19f03077b9
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Wed Mar 22 01:11:43 2023 -0500
+
+    Allowed trainer distance to be updated
+    with npc movement.
+
+commit 19ea0afc3ac388e079045681e9a262778e8a2fb1
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Wed Mar 22 00:58:26 2023 -0500
+
+    Added functionality for viewing trainers.
+    Also added ability to see how far away they are.
+
+commit 11d3ec72bede2bda3a1a93ab7f754739fd98c6c7
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Tue Mar 21 23:33:56 2023 -0500
+
+    Accidentally commited output file, fixed.
+
+commit 9d2a9c258fa4cb0721ab0e9211120ed0648b9d2f
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Tue Mar 21 23:32:59 2023 -0500
+
+    Added movement for the PC with trainer pathing.
+    Additonally added color!
+
+commit 2b5f11cead7078ea5206d13f1097eea9fe617ac4
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Tue Mar 21 23:31:40 2023 -0500
+
+    Added support for PC movement.
+    Additonally added color to the screen.
+
+commit 42e9c572fd7111cd9bcacf5344e663f66e5251db
+Author: Joseph Jennings <josephjenningsct@gmail.com>
+Date:   Tue Mar 21 01:13:12 2023 -0500
+
+    Added lncurses to makefile.
+    Added basic window and print to program for ncurses.
+
+commit 9088915d6a21a354b8a4f2a89c9c1f81a603e8f6
+Author: JosephTJennings <josephjenningsct@gmail.com>
+Date:   Sun Mar 19 21:34:13 2023 -0500
+
+    Merged with Dr. Shaeffer.
+
+commit c335f21bd54b36edebf49edb9e76c0e6fc811884
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Thu Mar 2 03:36:59 2023 -0600
+
+    Added ability to prompt for number of trainers.
+
+commit 4cda4824bc0569b75810a152a7cf333736aa28d5
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Thu Mar 2 03:30:45 2023 -0600
+
+    Added map regeneration...
+
+commit efd297cb49b3f2301a475fb00682820d3abaffb3
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Thu Mar 2 03:06:55 2023 -0600
+
+    Added rival movement.
+
+commit 9cabf55cd9a20c644983acad371e4de4347b43a6
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Thu Mar 2 02:22:45 2023 -0600
+
+    added movement for pacer, wanderer, sentry
+
+commit 47ac26137a223d0a2fa6245bb8597fb809f34965
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Wed Mar 1 01:29:44 2023 -0600
+
+    added struct for npc and added npc spawn functionality.
+
+commit 8fa6c5331401315eb5fdf3ac9c0279ed3386ac45
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Mon Feb 27 15:47:45 2023 -0600
+
+    Merged code with Shaeffers code
+
+commit a4579e7c19aea4c3e953f86e2061f335664d4163
+Author: josephTJennings <josephjenningsct@gmail.com>
+Date:   Thu Feb 23 01:11:18 2023 -0600
+
+    added a function to get the terrain cost at a coordinate
+
 commit fc5612dcb66622b47ce4e693d8f4bc6b7d0fda8e
 Author: josephTJennings <josephjenningsct@gmail.com>
 Date:   Thu Feb 23 00:24:23 2023 -0600

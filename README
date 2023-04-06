@@ -1,8 +1,7 @@
-Assignment 1.06 transitioned to C++ code and allowed trainers to move through gates.
+Assignment 1.07 allows for parsing of multiple CSV's to fill new structs.
 
-Structures include map_t, character_t, terrain_t
-This assignment takes in various inputs from the keyboard to control the PC movement 
-as well as commands to fly to new maps again and leave through gates.
+Structures include Pokemon, moves, pokemon_moves, stats, pokemon_stats, experience, and pokemon_types.
+This assignment takes an argument given by the command line to determine what CSV to parse.
 
 Compile using make. 
 Author: Joseph Jennings (jtj9)
