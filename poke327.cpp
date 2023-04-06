@@ -13,6 +13,7 @@
 #include "poke327.h"
 #include "character.h"
 #include "io.h"
+#include "pokemon.cpp"
 
 typedef struct queue_node {
   int x, y;
@@ -1148,6 +1149,33 @@ int main(int argc, char *argv[])
   int i;
 
   do_seed = 1;
+  if(argc == 2) {
+    char* argument = argv[1];
+    string filePath = "";
+    if(strcmp(argument, "pokemon_moves") == 0) {
+      vector<pokemon_moves> pokemonMoves = getPokemonMoves(filePath);
+    } else if(strcmp(argument, "pokemon") == 0) {
+      vector<pokemon> pokemonList = getPokemonCSV(filePath);
+    } else if(strcmp(argument, "pokemon_species") == 0) {
+      vector<pokemon_species> pokemonSpecies = getPokemonSpecies(filePath);
+    } else if(strcmp(argument, "pokemon_stats") == 0) {
+      vector<pokemon_stats> pokemonStats = getPokemonStats(filePath);
+    } else if(strcmp(argument, "pokemon_types") == 0) {
+      vector<pokemon_types> pokemonTypes = getPokemonTypes(filePath);
+    } else if(strcmp(argument, "type_names") == 0) {
+      vector<type_names> typeNames = getTypeNames(filePath);
+    } else if(strcmp(argument, "moves") == 0) {
+      vector<moves> moveList = getMoves(filePath);
+    } else if(strcmp(argument, "experience") == 0) {
+      vector<experience> experienceList = getExperience(filePath);
+    } else if(strcmp(argument, "stats") == 0) {
+      vector<stats> statList = getStats(filePath);
+    }else {
+      cout << "Incorrect arguments given.\n";
+    }
+  }
+  cout << "Exiting. Have a good day!\n";
+  return 0;
   
   if (argc > 1) {
     for (i = 1, long_arg = 0; i < argc; i++, long_arg = 0) {

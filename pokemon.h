@@ -64,4 +64,47 @@ struct pokemon_types {
     int slot;
 };
 
+struct moves {
+    //id,identifier,generation_id,type_id,power,pp,accuracy,priority,target_id,damage_class_id,
+    //effect_id,effect_chance,contest_type_id,contest_effect_id,super_contest_effect_id
+    int id;
+    std::string identifier;
+    int generation_id;
+    int type_id;
+    int power;
+    int pp;
+    int accuracy;
+    int priority;
+    int target_id;
+    int damage_class_id;
+    int effect_id;
+    int effect_chance;
+    int contest_type_id;
+    int contest_effect_id;
+    int super_contest_effect_id;
+};
+
+struct experience{
+    //growth_rate_id,level,experience
+    int growth_rate_id;
+    int level;
+    int experience;
+};
+
+struct type_names{
+    //type_id,local_language_id,name
+    int type_id;
+    int local_language_id;
+    std::string name;
+};
+
+struct stats{
+    //id,damage_class_id,identifier,is_battle_only,game_index
+    int id;
+    int damage_class_id;
+    std::string identifier;
+    int is_battle_only;
+    int game_index;
+};
+
 #endif
