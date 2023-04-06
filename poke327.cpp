@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <assert.h>
 #include <unistd.h>
+#include <filesystem>
 
 #include "heap.h"
 #include "poke327.h"
@@ -1151,7 +1152,17 @@ int main(int argc, char *argv[])
   do_seed = 1;
   if(argc == 2) {
     char* argument = argv[1];
-    string filePath = "";
+    //\share\cs327\pokedex\data\csv
+    std::string filePath = "/share/cs327";
+    if(std::filesystem::is_directory(filePath)) {
+      filePath = filePath + "/pokedex/data/csv/";
+    }else if(const char* env_p = std::getenv("/.poke327/")) {
+      filePath = env_p;
+      filePath = filePath + "pokedex/data/csv/";
+    } else {
+      cout << "Error: Could not find filepath.\n";
+      return 0;
+    }
     if(strcmp(argument, "pokemon_moves") == 0) {
       vector<pokemon_moves> pokemonMoves = getPokemonMoves(filePath);
     } else if(strcmp(argument, "pokemon") == 0) {
