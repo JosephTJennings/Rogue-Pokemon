@@ -9,7 +9,7 @@
 
 using namespace std;
 
-static vector<pokemon_move_db> getPossibleMoves(int pokemon_id, int move_id){
+vector<pokemon_move_db> getPossibleMoves(int pokemon_id, int move_id){
     int left = 0;
     int right = 528239 - 1;
     int moveIndex = 0;
@@ -37,7 +37,7 @@ static vector<pokemon_move_db> getPossibleMoves(int pokemon_id, int move_id){
     return possibleMoves;
 }
 
-static vector<pokemon_stats_db> getBaseStats(int pokemon_id) {
+vector<pokemon_stats_db> getBaseStats(int pokemon_id) {
     int left = 0;
     int right = 6553 - 1;
     int moveIndex = 0;

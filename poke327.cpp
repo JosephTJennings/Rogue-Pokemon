@@ -15,6 +15,8 @@
 #include "character.h"
 #include "io.h"
 #include "db_parse.h"
+#include <vector>
+#include "pokemonGen.h"
 
 typedef struct queue_node {
   int x, y;
@@ -41,6 +43,18 @@ static int32_t path_cmp(const void *key, const void *with) {
 static int32_t edge_penalty(int8_t x, int8_t y)
 {
   return (x == 1 || y == 1 || x == MAP_X - 2 || y == MAP_Y - 2) ? 2 : 1;
+}
+
+static std::vector<pokemon_db> generateTrainerPokemon() {
+  std::vector<pokemon_db> pokes;
+  pokemon_db tmpPoke;
+  tmpPoke = addPokemonEncounter(calcLevel());
+  pokes.push_back(tmpPoke);
+  while(rand() % 5 < 3 && pokes.size() < 6) {
+    tmpPoke = addPokemonEncounter(calcLevel());
+    pokes.push_back(tmpPoke);
+  }
+  return pokes;
 }
 
 static void dijkstra_path(map_t *m, pair_t from, pair_t to)
@@ -747,6 +761,7 @@ void new_hiker()
   c->symbol = 'h';
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
+  c->pokemonRoster = generateTrainerPokemon();
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
 
@@ -777,6 +792,7 @@ void new_rival()
   c->symbol = 'r';
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
+  c->pokemonRoster = generateTrainerPokemon();
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
 }
@@ -802,6 +818,7 @@ void new_swimmer()
   c->symbol = SWIMMER_SYMBOL;
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
+  c->pokemonRoster = generateTrainerPokemon();
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
 }
@@ -845,6 +862,7 @@ void new_char_other()
   c->defeated = 0;
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
+  c->pokemonRoster = generateTrainerPokemon();
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
 }
@@ -873,6 +891,7 @@ void place_characters()
       new_char_other();
       break;
     }
+
     /* Game attempts to continue to place trainers until the probability *
      * roll fails, but if the map is full (or almost full), it's         *
      * impossible (or very difficult) to continue to add, so we abort if *

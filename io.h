@@ -13,6 +13,6 @@ void io_handle_input(pair_t dest);
 void io_queue_message(const char *format, ...);
 void io_battle(character *aggressor, character *defender);
 void chooseStarters(void);
-
+int calcLevel(void);
 
 #endif

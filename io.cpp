@@ -3,13 +3,15 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <string>
 
 #include "io.h"
 #include "character.h"
 #include "poke327.h"
-#include "pokemonGen.cpp"
+#include "pokemonGen.h"
 #include "db_parse.h"
 
+using namespace std;
 typedef struct io_message {
   /* Will print " --more-- " at end of line when another message follows. *
    * Leave 10 extra spaces for that.                                      */
