@@ -8,12 +8,14 @@
 #include <sys/time.h>
 #include <assert.h>
 #include <unistd.h>
+#include <cstdlib>
 
 #include "heap.h"
 #include "poke327.h"
 #include "character.h"
 #include "io.h"
 #include "db_parse.h"
+#include "pokemonGen.cpp"
 
 typedef struct queue_node {
   int x, y;
@@ -1092,6 +1094,25 @@ void leave_map(pair_t d)
     world.cur_idx[dim_y]++;
   }
   new_map(0);
+}
+
+int calcManhattenDis(){
+  int distance = abs(200 - world.cur_idx[dim_x]) + abs(200 - world.cur_idx[dim_y]); //manhatten distance
+  return distance;
+}
+
+int calcLevel() {
+  int manhattenDis = calcManhattenDis();
+  int minLevel;
+  int maxLevel;
+  if(manhattenDis <= 200){
+    minLevel = 1;
+    maxLevel = manhattenDis / 2;
+  } else {
+    minLevel = (manhattenDis - 200) / 2;
+    maxLevel = 100;
+  }
+  return (rand() % (maxLevel - minLevel)) + minLevel;
 }
 
 void game_loop()
