@@ -385,7 +385,14 @@ void io_battle(character *aggressor, character *defender)
   npc *n = (npc *) ((aggressor == &world.pc) ? defender : aggressor);
 
   io_display();
-  mvprintw(0, 0, "Aww, how'd you get so strong?  You and your pokemon must share a special bond!");
+  io_queue_message("Let's battle! I have %d pokemon!", (int) aggressor->pokemonRoster.size());
+  for(int i = 0; i < (int) aggressor->pokemonRoster.size(); i++) {
+    string name = aggressor->pokemonRoster[i].identifier;
+    string pokemonDesc = name + ", level:" + to_string(aggressor->pokemonRoster[i].level) +  ", stats: " + to_string( aggressor->pokemonRoster[i].baseStats[0].base_stat) + " " + 
+    to_string( aggressor->pokemonRoster[i].baseStats[0].base_stat) + " "+ to_string( aggressor->pokemonRoster[i].baseStats[1].base_stat) + " " + to_string( aggressor->pokemonRoster[i].baseStats[2].base_stat) + " "
+    + to_string( aggressor->pokemonRoster[i].baseStats[3].base_stat) + " " + to_string( aggressor->pokemonRoster[i].baseStats[4].base_stat) + " " + to_string( aggressor->pokemonRoster[i].baseStats[5].base_stat);
+    io_queue_message("%o: %s", i + 1, pokemonDesc.c_str());
+  }
   refresh();
   getch();
 
