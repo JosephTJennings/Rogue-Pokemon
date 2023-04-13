@@ -1,7 +1,8 @@
-Assignment 1.07 allows for parsing of multiple CSV's to fill new structs.
+Assignment 1.08 allows for pokemon creation, wild encounters, and character's pokemons.
 
 Structures include Pokemon, moves, pokemon_moves, stats, pokemon_stats, experience, and pokemon_types.
-This assignment takes an argument given by the command line to determine what CSV to parse.
+This assignment the PC can traverse the map and encounter wild pokemon.
+Characters will also receive pokemon.
 
 Compile using make. 
 Author: Joseph Jennings (jtj9)
