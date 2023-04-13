@@ -2,9 +2,10 @@
 # define CHARACTER_H
 
 # include <stdint.h>
+#include <vector>
 
 # include "pair.h"
-
+# include "db_parse.h"
 typedef enum __attribute__ ((__packed__)) movement_type {
   move_hiker,
   move_rival,
@@ -35,6 +36,7 @@ class character {
   char symbol;
   int next_turn;
   int seq_num;
+  std::vector<pokemon_db> pokemonRoster;
 };
 
 class npc : public character {

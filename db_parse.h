@@ -95,7 +95,8 @@ struct pokemon_db {
   int is_default;
 
   std::vector<pokemon_move_db> moveset;
-  stats_db stats;
+  std::vector<pokemon_stats_db> baseStats;
+  std::vector<pokemon_stats_db> IVS;
   int level;
 };
 

@@ -505,7 +505,11 @@ void io_encounter(pokemon_db poke) {
   string name = poke.identifier;
   string pokeI = name + ", level: " + to_string(poke.level);
   io_queue_message(pokeI.c_str());
-  io_queue_message("stats: ");
+  string stats = "stats: ";
+  for(int i = 0; i < (int) poke.baseStats.size(); i++) {
+    stats = stats + to_string(poke.baseStats[i].base_stat) + " ";
+  }
+  io_queue_message(stats.c_str());
   string move = "moves: ";
   for(int i = 0; i < (int)(poke.moveset.size()); i++){
         move = move + to_string(poke.moveset[i].move_id) + " ";
@@ -530,6 +534,48 @@ int calcLevel() {
     maxLevel = 100;
   }
   return (rand() % (maxLevel - minLevel)) + minLevel;
+}
+
+void chooseStarters() {
+  vector<pokemon_db> starters = addPokemonStarters();
+  pokemon_db starterPoke;
+  string name = starters[0].identifier;
+  string pokemonDesc = name + ", stats: " + to_string(starters[0].baseStats[0].base_stat) + " " + 
+    to_string(starters[0].baseStats[0].base_stat) + " "+ to_string(starters[0].baseStats[1].base_stat) + " " + to_string(starters[0].baseStats[2].base_stat) + " "
+    + to_string(starters[0].baseStats[3].base_stat) + " " + to_string(starters[0].baseStats[4].base_stat) + " " + to_string(starters[0].baseStats[5].base_stat);
+  mvprintw(0, 0, "Enter the number corresponding to the starter pokemon you would like to select (1, 2, 3)");
+  mvprintw(1, 0, "1: %s", pokemonDesc.c_str());
+
+  name = starters[1].identifier;
+  pokemonDesc = name + ", stats: " + to_string(starters[1].baseStats[0].base_stat) + " " + 
+    to_string(starters[1].baseStats[0].base_stat) + " "+ to_string(starters[1].baseStats[1].base_stat) + " " + to_string(starters[1].baseStats[2].base_stat) + " "
+    + to_string(starters[1].baseStats[3].base_stat) + " " + to_string(starters[1].baseStats[4].base_stat) + " " + to_string(starters[1].baseStats[5].base_stat);
+  mvprintw(2, 0, "2: %s", pokemonDesc.c_str());
+
+  name = starters[2].identifier;
+  pokemonDesc = name + ", stats: " + to_string(starters[2].baseStats[0].base_stat) + " " + 
+    to_string(starters[2].baseStats[0].base_stat) + " "+ to_string(starters[2].baseStats[1].base_stat) + " " + to_string(starters[2].baseStats[2].base_stat) + " "
+    + to_string(starters[2].baseStats[3].base_stat) + " " + to_string(starters[2].baseStats[4].base_stat) + " " + to_string(starters[2].baseStats[5].base_stat);
+  mvprintw(3, 0, "3: %s", pokemonDesc.c_str());
+  int input;
+  do {
+    refresh();
+    switch (input = getch()) {
+      case '1':
+        starterPoke = starters[0];
+        break;
+      case '2':
+        starterPoke = starters[1];
+        break;
+      case '3':
+        starterPoke = starters[2];
+        break;
+      default:
+        mvprintw(4, 0, "invalid key: %#o, only 1, 2, or 3 is valid", input);
+    }
+  }while(input != '1' && input != '2' && input != '3');
+  mvprintw(5, 0, "Welcome to pokemon!");
+  world.pc.pokemonRoster.push_back(starterPoke);
 }
 
 void io_handle_input(pair_t dest)
@@ -654,6 +700,7 @@ void io_handle_input(pair_t dest)
   bool encounter = (rand() % 7 == 0) ? true : false;
   if(encounter && world.cur_map->map[world.pc.pos[dim_y]][world.pc.pos[dim_x]] == ter_grass) {
     pokemon_db newPokemon = addPokemonEncounter(calcLevel());
+    newPokemon = levelUp(newPokemon, newPokemon.level);
     io_encounter(newPokemon);
   }
 }

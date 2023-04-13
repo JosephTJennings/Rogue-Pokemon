@@ -1193,6 +1193,8 @@ int main(int argc, char *argv[])
   
   init_world();
 
+  chooseStarters();
+
   /* print_hiker_dist(); */
   
   /*
