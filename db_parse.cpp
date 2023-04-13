@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <sys/stat.h>
 #include <climits>
+#include <iostream>
 
 #include "db_parse.h"
 
@@ -90,6 +91,7 @@ void db_parse(bool print)
   } else if (!prefix) {
     // Your third location goes here, if needed.
     // prefix is freed later, so be sure you malloc it
+    prefix = strdup("/home/joey/Programming/share/cs327/pokedex/data/csv/"); //home/joey/Programming/share/cs327/pokedex/data/csv
   }
 
   //No error checking on file load from here on out.  Missing
@@ -98,14 +100,11 @@ void db_parse(bool print)
 
   prefix = (char *) realloc(prefix, prefix_len + strlen("pokemon.csv") + 1);
   strcpy(prefix + prefix_len, "pokemon.csv");
-  
   f = fopen(prefix, "r");
 
   //No null byte copied here, so prefix is not technically a string anymore.
   prefix = (char *) realloc(prefix, prefix_len + 1);
-
   fgets(line, 80, f);
-  
   for (i = 1; i < 1093; i++) {
     fgets(line, 80, f);
     pokemon[i].id = atoi(next_token(line, ','));
@@ -135,7 +134,6 @@ void db_parse(bool print)
     }
     fclose(f);
   }
-
 
   prefix = (char *) realloc(prefix, prefix_len + strlen("moves.csv") + 1);
   strcpy(prefix + prefix_len, "moves.csv");
