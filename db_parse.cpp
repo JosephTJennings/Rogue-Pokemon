@@ -54,7 +54,7 @@ static const char *i2s(int i)
 }
 
 pokemon_move_db pokemon_moves[528239];
-pokemon_db pokemon[1093];
+pokemon_db pokemons[1093];
 char *types[19];
 move_db moves[845];
 pokemon_species_db species[899];
@@ -107,14 +107,14 @@ void db_parse(bool print)
   fgets(line, 80, f);
   for (i = 1; i < 1093; i++) {
     fgets(line, 80, f);
-    pokemon[i].id = atoi(next_token(line, ','));
-    strncpy(pokemon[i].identifier, next_token(NULL, ','), 30);
-    pokemon[i].species_id = atoi(next_token(NULL, ','));
-    pokemon[i].height = atoi(next_token(NULL, ','));
-    pokemon[i].weight = atoi(next_token(NULL, ','));
-    pokemon[i].base_experience = atoi(next_token(NULL, ','));
-    pokemon[i].order = atoi(next_token(NULL, ','));
-    pokemon[i].is_default = atoi(next_token(NULL, ','));
+    pokemons[i].id = atoi(next_token(line, ','));
+    strncpy(pokemons[i].identifier, next_token(NULL, ','), 30);
+    pokemons[i].species_id = atoi(next_token(NULL, ','));
+    pokemons[i].height = atoi(next_token(NULL, ','));
+    pokemons[i].weight = atoi(next_token(NULL, ','));
+    pokemons[i].base_experience = atoi(next_token(NULL, ','));
+    pokemons[i].order = atoi(next_token(NULL, ','));
+    pokemons[i].is_default = atoi(next_token(NULL, ','));
   }  
 
   fclose(f);
@@ -123,14 +123,14 @@ void db_parse(bool print)
     f = fopen("pokemon.csv", "w");
     for (i = 1; i < 1093; i++) {
       fprintf(f, "%s,%s,%s,%s,%s,%s,%s,%s\n",
-              i2s(pokemon[i].id),
-              pokemon[i].identifier,
-              i2s(pokemon[i].species_id),
-              i2s(pokemon[i].height),
-              i2s(pokemon[i].weight),
-              i2s(pokemon[i].base_experience),
-              i2s(pokemon[i].order),
-              i2s(pokemon[i].is_default));
+              i2s(pokemons[i].id),
+              pokemons[i].identifier,
+              i2s(pokemons[i].species_id),
+              i2s(pokemons[i].height),
+              i2s(pokemons[i].weight),
+              i2s(pokemons[i].base_experience),
+              i2s(pokemons[i].order),
+              i2s(pokemons[i].is_default));
     }
     fclose(f);
   }

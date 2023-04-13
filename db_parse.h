@@ -1,16 +1,6 @@
 #ifndef DB_PARSE_H
 # define DB_PARSE_H
-
-struct pokemon_db {
-  int id;
-  char identifier[30];
-  int species_id;
-  int height;
-  int weight;
-  int base_experience;
-  int order;
-  int is_default;
-};
+#include <vector>
 
 struct move_db {
   int id;
@@ -94,8 +84,23 @@ struct pokemon_types_db {
   int slot;
 };
 
+struct pokemon_db {
+  int id;
+  char identifier[30];
+  int species_id;
+  int height;
+  int weight;
+  int base_experience;
+  int order;
+  int is_default;
+
+  std::vector<pokemon_move_db> moveset;
+  stats_db stats;
+  int level;
+};
+
 extern pokemon_move_db pokemon_moves[528239];
-extern pokemon_db pokemon[1093];
+extern pokemon_db pokemons[1093];
 extern char *types[19];
 extern move_db moves[845];
 extern pokemon_species_db species[899];

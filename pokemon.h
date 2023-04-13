@@ -11,6 +11,11 @@ class pokemon {
     int weight;
     int base_experience;
     int order_is_default;
+
+    pokemon_moves moveset;
+    pokemon_stats stats;
+    int is_shiny;
+    int level;
 };
 
 struct pokemon_moves {
