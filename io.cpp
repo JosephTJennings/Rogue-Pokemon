@@ -7,6 +7,8 @@
 #include "io.h"
 #include "character.h"
 #include "poke327.h"
+#include "pokemonGen.cpp"
+#include "db_parse.h"
 
 typedef struct io_message {
   /* Will print " --more-- " at end of line when another message follows. *
@@ -498,6 +500,38 @@ void io_teleport_world(pair_t dest)
   io_teleport_pc(dest);
 }
 
+void io_encounter(pokemon_db poke) {
+  io_queue_message("A wild pokemon appeared!");
+  string name = poke.identifier;
+  string pokeI = name + ", level: " + to_string(poke.level);
+  io_queue_message(pokeI.c_str());
+  io_queue_message("stats: ");
+  string move = "moves: ";
+  for(int i = 0; i < (int)(poke.moveset.size()); i++){
+        move = move + to_string(poke.moveset[i].move_id) + " ";
+  }
+  io_queue_message(move.c_str());
+}
+
+int calcManhattenDis(){
+  int distance = abs(200 - world.cur_idx[dim_x]) + abs(200 - world.cur_idx[dim_y]); //manhatten distance
+  return distance;
+}
+
+int calcLevel() {
+  int manhattenDis = calcManhattenDis();
+  int minLevel;
+  int maxLevel;
+  if(manhattenDis <= 200){
+    minLevel = 1;
+    maxLevel = manhattenDis / 2;
+  } else {
+    minLevel = (manhattenDis - 200) / 2;
+    maxLevel = 100;
+  }
+  return (rand() % (maxLevel - minLevel)) + minLevel;
+}
+
 void io_handle_input(pair_t dest)
 {
   uint32_t turn_not_consumed;
@@ -617,4 +651,9 @@ void io_handle_input(pair_t dest)
     }
     refresh();
   } while (turn_not_consumed);
+  bool encounter = (rand() % 7 == 0) ? true : false;
+  if(encounter && world.cur_map->map[world.pc.pos[dim_y]][world.pc.pos[dim_x]] == ter_grass) {
+    pokemon_db newPokemon = addPokemonEncounter(calcLevel());
+    io_encounter(newPokemon);
+  }
 }

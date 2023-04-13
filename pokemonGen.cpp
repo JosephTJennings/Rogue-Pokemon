@@ -39,7 +39,6 @@ static vector<pokemon_move_db> getPossibleMoves(int pokemon_id, int move_id){
 pokemon_db addPokemonEncounter(int level){
     int pokemonIndex = rand() % 1093;
     pokemon_db newPokemon = pokemons[pokemonIndex];
-    cout << "test...\n";
     vector<pokemon_move_db> possibleMoves = getPossibleMoves(newPokemon.species_id, 1);
     vector<pokemon_move_db> moveSet;
     int count = 2;
@@ -47,7 +46,6 @@ pokemon_db addPokemonEncounter(int level){
         possibleMoves = getPossibleMoves(newPokemon.species_id, count);
         count++;
     }
-    cout << "test...\n";
     for(int i = 0; i < 2; i++) {
         int randMoveIndex = rand() % possibleMoves.size();
         moveSet.push_back(possibleMoves[randMoveIndex]);
@@ -59,7 +57,6 @@ pokemon_db addPokemonEncounter(int level){
 }
 
 void printPokemonInfo(pokemon_db poke) {
-    cout <<"STARTING PRINT...\n";
     cout << poke.identifier << ", level: " << poke.level << ", stats: " << " \n";
     cout << "moves (move_id): ";
     for(int i = 0; i < (int)(poke.moveset.size()); i++){
