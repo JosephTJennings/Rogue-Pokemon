@@ -8,13 +8,12 @@
 #include <sys/time.h>
 #include <assert.h>
 #include <unistd.h>
-#include <filesystem>
 
 #include "heap.h"
 #include "poke327.h"
 #include "character.h"
 #include "io.h"
-#include "pokemon.cpp"
+#include "db_parse.h"
 
 typedef struct queue_node {
   int x, y;
@@ -1149,44 +1148,10 @@ int main(int argc, char *argv[])
   //  int x, y;
   int i;
 
-  do_seed = 1;
-  if(argc == 2) {
-    char* argument = argv[1];
-    //\share\cs327\pokedex\data\csv
-    std::string filePath = "/share/cs327";
-    if(std::filesystem::is_directory(filePath)) {
-      filePath = filePath + "/pokedex/pokedex/data/csv/";
-    }else if(const char* env_p = std::getenv("HOME")) {
-      filePath = env_p;
-      filePath = filePath + "/.poke327/pokedex/data/csv/";
-    } else {
-      cout << "Error: Could not find filepath.\n";
-      return 0;
-    }
-    if(strcmp(argument, "pokemon_moves") == 0) {
-      vector<pokemon_moves> pokemonMoves = getPokemonMoves(filePath);
-    } else if(strcmp(argument, "pokemon") == 0) {
-      vector<pokemon> pokemonList = getPokemonCSV(filePath);
-    } else if(strcmp(argument, "pokemon_species") == 0) {
-      vector<pokemon_species> pokemonSpecies = getPokemonSpecies(filePath);
-    } else if(strcmp(argument, "pokemon_stats") == 0) {
-      vector<pokemon_stats> pokemonStats = getPokemonStats(filePath);
-    } else if(strcmp(argument, "pokemon_types") == 0) {
-      vector<pokemon_types> pokemonTypes = getPokemonTypes(filePath);
-    } else if(strcmp(argument, "type_names") == 0) {
-      vector<type_names> typeNames = getTypeNames(filePath);
-    } else if(strcmp(argument, "moves") == 0) {
-      vector<moves> moveList = getMoves(filePath);
-    } else if(strcmp(argument, "experience") == 0) {
-      vector<experience> experienceList = getExperience(filePath);
-    } else if(strcmp(argument, "stats") == 0) {
-      vector<stats> statList = getStats(filePath);
-    }else {
-      cout << "Incorrect arguments given.\n";
-    }
-  }
-  cout << "Exiting. Have a good day!\n";
+  db_parse(false);
   return 0;
+  
+  do_seed = 1;
   
   if (argc > 1) {
     for (i = 1, long_arg = 0; i < argc; i++, long_arg = 0) {
