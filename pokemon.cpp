@@ -162,6 +162,8 @@ bool pokemon::is_shiny() const
   return shiny;
 }
 
+
+
 const char *pokemon::get_move(int i) const
 {
   if (i < 4 && move_index[i]) {
@@ -169,4 +171,22 @@ const char *pokemon::get_move(int i) const
   } else {
     return "";
   }
+}
+
+void pokemon::set_hp(int delta) {
+  effective_stat[stat_hp] += delta;
+}
+int pokemon::get_dam(int moveIndex) {
+  int stab, type, crit, power;
+  double damage;
+  stab = type = crit = 1;
+  power = moves[move_index[moveIndex]].power;
+  if(power < 1) power = 1;
+  if(rand() / 266 < effective_stat[stat_speed] / 2) crit = 1.5;
+  damage = (double)((double)(((double)(((2 * level) / 5) + 2) * power * ((double)(effective_stat[stat_atk] / effective_stat[stat_def])) ) / 50) + 2) * crit * (double)((rand() / 16) + 85) * stab * type;
+}
+int pokemon::get_acc(int moveIndex) {
+  int acc = moves[move_index[moveIndex]].accuracy;
+  if(rand() % 100 < acc) return 1;
+  return 0;
 }
