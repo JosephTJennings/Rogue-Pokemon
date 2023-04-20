@@ -366,6 +366,10 @@ static void io_list_trainers()
 void io_pokemart()
 {
   mvprintw(0, 0, "Welcome to the Pokemart.  Could I interest you in some Pokeballs?");
+  for(int i = 0; i < 3; i++) {
+    world.pc.itemCount.at(i) = 3;
+  }
+  mvprintw(3, 0, "Refilled bag!");
   refresh();
   getch();
 }
@@ -373,6 +377,10 @@ void io_pokemart()
 void io_pokemon_center()
 {
   mvprintw(0, 0, "Welcome to the Pokemon Center.  How can Nurse Joy assist you?");
+  for(int i = 0; i < 6 && world.pc.buddy[i] != NULL; i++) {
+    world.pc.buddy[i]->set_hp(100);
+  }
+  mvprintw(3, 0, "Healed Pokemon!");
   refresh();
   getch();
 }
@@ -642,6 +650,7 @@ void io_encounter_pokemon()
                    p->get_move(0), p->get_move(1));
 
   // Later on, don't delete if captured
+  io_wildBattle(p);
   delete p;
 }
 
@@ -683,9 +692,20 @@ void io_choose_starter()
 }
 
 void io_openBackpack(int battle){
+  char input;
   while (true){
     clear();
     mvprintw(0, 0, "Backpack items:\n");
+    int i;
+    for(i = 0; i < (int)world.pc.items.size(); i++) {
+      mvprintw(i + 1, 5, "%s (%d)\n", world.pc.items.at(i).c_str(), world.pc.itemCount.at(i));
+    }
+
+    mvprintw(i + 1, 5, "press q to exit");
+    refresh();
+    input = getch();
+    if(input == 'q') break;
+    refresh();
   }
 }
 
@@ -745,7 +765,7 @@ void io_trainerBattle(npc* enemy) {
       getch();
     }
     else if (input == 'b')
-      //io_backpack(1);
+      io_openBackpack(1);
     damage = enemyPoke->get_dam((rand() % 2) + 1);
     if (enemyPoke->get_acc(rand() % 1 + 1) > rand() % 100)pcPoke->set_hp(damage * -1);
     else damage = -1;
@@ -767,5 +787,52 @@ void io_trainerBattle(npc* enemy) {
 }
 
 void io_wildBattle(pokemon* foe){
-  return;
+  int battle, run;
+  battle = run = 1;
+  int curPCIndex = 0;
+  pokemon* pcPoke = world.pc.buddy[0];
+  char input = '0';
+
+  do{
+    clear();
+    if(pcPoke->get_hp() <= 0 || world.pc.buddy[curPCIndex] == NULL) battle = 0;
+    else if(pcPoke->get_hp() <= 0 && curPCIndex < 6 && world.pc.buddy[curPCIndex + 1] != NULL){
+      curPCIndex++;
+      pcPoke = world.pc.buddy[curPCIndex];
+    }
+
+    mvprintw(0, 0, "Wild battle! Pokemon: %s%s \n   HP:%d ATK:%d DEF:%d SPATK:%d SPDEF:%d SPEED:%d %s",
+             foe->get_species(),
+             foe->is_shiny() ? "*" : "", foe->get_hp(), foe->get_atk(),
+             foe->get_def(), foe->get_spatk(), foe->get_spdef(),
+             foe->get_speed(), foe->get_gender_string());
+    mvprintw(3, 0, "Your pokemon: %s \n   HP:%d ATK:%d DEF:%d SPATK:%d SPDEF:%d SPEED:%d  \nMoves: \n1. %s\n2. %s", pcPoke->get_species(), pcPoke->get_hp(), pcPoke->get_atk(),
+             pcPoke->get_def(), pcPoke->get_spatk(), pcPoke->get_spdef(), pcPoke->get_speed(), pcPoke->get_move(0), pcPoke->get_move(1));
+    mvprintw(8, 0, "possible actions: \n(1) move 1\n(2) move 2\n(b) backpack \n(r) run");
+
+    input = getch();
+    int damage;
+    if(input == '1' || input == '2'){
+      int move = 0;
+      if(input == '1') move = 1;
+      if (input == '2') move = 2;
+
+      damage = pcPoke->get_dam(move);
+      if (pcPoke->get_acc(move) > rand() % 100) foe->set_hp(damage * -1);
+      else damage = -1;
+      clear();
+    }else if (input == 'b') io_openBackpack(1);
+    else if (input == 'r'){
+      int chance = ((pcPoke->get_speed() * 32) / ((foe->get_speed() / 4) % 256)) + (30 * run);
+      if(chance > rand() % 256) battle = 0;
+      run++;
+    }
+    if (pcPoke->get_hp() <= 0 && world.pc.buddy[curPCIndex + 1] == NULL) battle = 0;
+    else if(pcPoke->get_hp() <= 0 && world.pc.buddy[curPCIndex + 1] != NULL){
+      curPCIndex++;
+      pcPoke = world.pc.buddy[curPCIndex];
+    }
+    if (foe->get_hp() <= 0) battle = 0;
+    clear();
+  }while(battle);
 }

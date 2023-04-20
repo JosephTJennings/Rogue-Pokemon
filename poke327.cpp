@@ -917,10 +917,15 @@ void init_pc()
 
   world.cur_map->cmap[y][x] = &world.pc;
   world.pc.next_turn = 0;
-
+  world.pc.items.push_back("revive");
+  world.pc.items.push_back("pokeball");
+  world.pc.items.push_back("potion");
+  world.pc.itemCount.push_back(3);
+  world.pc.itemCount.push_back(3);
+  world.pc.itemCount.push_back(3);
   heap_insert(&world.cur_map->turn, &world.pc);
 
-  io_choose_starter();  
+  io_choose_starter();
 }
 
 void place_pc()
@@ -1152,6 +1157,11 @@ void game_loop()
         (world.cur_map->map[d[dim_y]][d[dim_x]] == ter_grass) &&
         (rand() % 100 < ENCOUNTER_PROB)) {
       io_encounter_pokemon();
+    }
+    if(p && (world.cur_map->map[p->pos[dim_y]][p->pos[dim_x]] == ter_mart)) {
+      io_pokemart();
+    }if(p && (world.cur_map->map[p->pos[dim_y]][p->pos[dim_x]] == ter_center)) {
+      io_pokemon_center();
     }
 
     c->pos[dim_y] = d[dim_y];

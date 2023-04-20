@@ -17,4 +17,6 @@ void io_encounter_pokemon();
 void io_choose_starter();
 void io_trainerBattle(npc* n);
 void io_wildBattle(pokemon* enemy);
+void io_pokemart();
+void io_pokemon_center();
 #endif
