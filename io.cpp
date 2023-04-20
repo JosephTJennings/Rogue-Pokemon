@@ -391,6 +391,8 @@ void io_battle(character *aggressor, character *defender)
   refresh();
   getch();
 
+  io_trainerBattle(n);
+
   n->defeated = 1;
   if (n->ctype == char_hiker || n->ctype == char_rival) {
     n->mtype = move_wander;
@@ -678,4 +680,92 @@ void io_choose_starter()
   } while (again);
   noecho();
   curs_set(0);
+}
+
+void io_openBackpack(int battle){
+  while (true){
+    clear();
+    mvprintw(0, 0, "Backpack items:\n");
+  }
+}
+
+void io_trainerBattle(npc* enemy) {
+  int curPokeIndex = 0;
+  int curPCIndex = 0;
+  pokemon* enemyPoke = enemy->buddy[curPokeIndex];
+  pokemon* pcPoke = world.pc.buddy[0];
+  int battle = 1;
+  do{
+    clear();
+    if(enemyPoke->get_hp() <= 0) {
+      curPokeIndex++;
+      if(enemy->buddy[curPokeIndex] == NULL || curPokeIndex >= 6) battle = 0; // out of pokemon
+      else enemyPoke = enemy->buddy[curPokeIndex];
+    } 
+    if(pcPoke->get_hp() <= 0 || world.pc.buddy[curPCIndex] == NULL) battle = 0;
+    else if(pcPoke->get_hp() <= 0 && curPCIndex < 6 && world.pc.buddy[curPCIndex + 1] != NULL){
+      curPCIndex++;
+      pcPoke = world.pc.buddy[curPCIndex];
+    }
+    
+    
+    mvprintw(0, 0, "Trainer battle! Pokemon: %s%s \n   HP:%d ATK:%d DEF:%d SPATK:%d SPDEF:%d SPEED:%d %s",
+             enemyPoke->get_species(),
+             enemyPoke->is_shiny() ? "*" : "", enemyPoke->get_hp(), enemyPoke->get_atk(),
+             enemyPoke->get_def(), enemyPoke->get_spatk(), enemyPoke->get_spdef(),
+             enemyPoke->get_speed(), enemyPoke->get_gender_string());
+    mvprintw(3, 0, "Your pokemon: %s \n   HP:%d ATK:%d DEF:%d SPATK:%d SPDEF:%d SPEED:%d  \nMoves: \n1. %s\n2. %s", pcPoke->get_species(), pcPoke->get_hp(), pcPoke->get_atk(),
+             pcPoke->get_def(), pcPoke->get_spatk(), pcPoke->get_spdef(), pcPoke->get_speed(), pcPoke->get_move(0), pcPoke->get_move(1));
+    mvprintw(8, 0, "possible actions: \n(1) move 1\n(2) move 2\n(b) backpack");
+    refresh();
+    char input = getch();
+    int damage;
+    if (input == '1' || input == '2')
+    {
+      int move = 0;
+      if(input == '1') move = 1;
+      if (input == '2') move = 2;
+
+      damage = pcPoke->get_dam(move);
+      if (pcPoke->get_acc(move) > rand() % 100) enemyPoke->set_hp(damage * -1);
+      else damage = -1;
+      clear();
+      mvprintw(0, 0, "Trainer battle! Pokemon: %s%s \n   HP:%d ATK:%d DEF:%d SPATK:%d SPDEF:%d SPEED:%d %s",
+             enemyPoke->get_species(),
+             enemyPoke->is_shiny() ? "*" : "", enemyPoke->get_hp(), enemyPoke->get_atk(),
+             enemyPoke->get_def(), enemyPoke->get_spatk(), enemyPoke->get_spdef(),
+             enemyPoke->get_speed(), enemyPoke->get_gender_string());
+      mvprintw(3, 0, "Your pokemon: %s \n   HP:%d ATK:%d DEF:%d SPATK:%d SPDEF:%d SPEED:%d  \nMoves: \n1. %s\n2. %s", pcPoke->get_species(), pcPoke->get_hp(), pcPoke->get_atk(),
+              pcPoke->get_def(), pcPoke->get_spatk(), pcPoke->get_spdef(), pcPoke->get_speed(), pcPoke->get_move(0), pcPoke->get_move(1));
+      mvprintw(8, 0, "possible actions: \n(1) move 1\n(2) move 2\n(b) backpack");
+      refresh();
+      if (damage == -1) mvprintw(10, 0, "%s missed", pcPoke->get_species());
+      else mvprintw(10, 0, "%s did %d  damage!", pcPoke->get_species(), damage);
+      refresh();
+      getch();
+    }
+    else if (input == 'b')
+      //io_backpack(1);
+    damage = enemyPoke->get_dam((rand() % 2) + 1);
+    if (enemyPoke->get_acc(rand() % 1 + 1) > rand() % 100)pcPoke->set_hp(damage * -1);
+    else damage = -1;
+
+    if (damage == -1) mvprintw(10, 0, "%s missed", enemyPoke->get_species());
+    else mvprintw(10, 0, "%s did %d damage!", enemyPoke->get_species(), damage);
+    refresh();
+    getch();
+    if (pcPoke->get_hp() <= 0 && world.pc.buddy[curPCIndex + 1] == NULL) battle = 0;
+    else if(pcPoke->get_hp() <= 0 && world.pc.buddy[curPCIndex + 1] != NULL){
+      curPCIndex++;
+      pcPoke = world.pc.buddy[curPCIndex];
+    }
+    clear();
+
+
+  } while(battle);
+  return;
+}
+
+void io_wildBattle(pokemon* foe){
+  return;
 }

@@ -2,6 +2,8 @@
 # define IO_H
 
 # include "pair.h"
+# include "pokemon.h"
+# include "character.h"
 
 class character;
 
@@ -13,5 +15,6 @@ void io_queue_message(const char *format, ...);
 void io_battle(character *aggressor, character *defender);
 void io_encounter_pokemon();
 void io_choose_starter();
-
+void io_trainerBattle(npc* n);
+void io_wildBattle(pokemon* enemy);
 #endif
