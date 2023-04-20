@@ -8,15 +8,13 @@
 #include <sys/time.h>
 #include <assert.h>
 #include <unistd.h>
-#include <cstdlib>
 
 #include "heap.h"
 #include "poke327.h"
 #include "character.h"
 #include "io.h"
 #include "db_parse.h"
-#include <vector>
-#include "pokemonGen.h"
+#include "pokemon.h"
 
 typedef struct queue_node {
   int x, y;
@@ -43,18 +41,6 @@ static int32_t path_cmp(const void *key, const void *with) {
 static int32_t edge_penalty(int8_t x, int8_t y)
 {
   return (x == 1 || y == 1 || x == MAP_X - 2 || y == MAP_Y - 2) ? 2 : 1;
-}
-
-static std::vector<pokemon_db> generateTrainerPokemon() {
-  std::vector<pokemon_db> pokes;
-  pokemon_db tmpPoke;
-  tmpPoke = addPokemonEncounter(calcLevel());
-  pokes.push_back(tmpPoke);
-  while(rand() % 5 < 3 && pokes.size() < 6) {
-    tmpPoke = addPokemonEncounter(calcLevel());
-    pokes.push_back(tmpPoke);
-  }
-  return pokes;
 }
 
 static void dijkstra_path(map_t *m, pair_t from, pair_t to)
@@ -738,11 +724,25 @@ void rand_pos(pair_t pos)
   pos[dim_y] = (rand() % (MAP_Y - 2)) + 1;
 }
 
+static void make_buddies(npc *c)
+{
+  int i;
+
+  i = 0;
+  do {
+    c->buddy[i] = new class pokemon();
+    i++;
+  } while ((i < 6) && ((rand() % 100) < ADD_TRAINER_POK_PROB));
+  for (; i < 6; i++) {
+    c->buddy[i] = NULL;
+  }
+}
+
 void new_hiker()
 {
   pair_t pos;
   npc *c;
-
+   
   do {
     rand_pos(pos);
   } while (world.hiker_dist[pos[dim_y]][pos[dim_x]] == INT_MAX ||
@@ -761,10 +761,10 @@ void new_hiker()
   c->symbol = 'h';
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
-  c->pokemonRoster = generateTrainerPokemon();
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
 
+  make_buddies(c);
   //  printf("Hiker at %d,%d\n", pos[dim_x], pos[dim_y]);
 }
 
@@ -772,7 +772,7 @@ void new_rival()
 {
   pair_t pos;
   npc *c;
-
+   
   do {
     rand_pos(pos);
   } while (world.rival_dist[pos[dim_y]][pos[dim_x]] == INT_MAX ||
@@ -792,16 +792,17 @@ void new_rival()
   c->symbol = 'r';
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
-  c->pokemonRoster = generateTrainerPokemon();
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
+
+  make_buddies(c);
 }
 
 void new_swimmer()
 {
   pair_t pos;
   npc *c;
-
+   
   do {
     rand_pos(pos);
   } while (world.cur_map->map[pos[dim_y]][pos[dim_x]] != ter_water ||
@@ -818,16 +819,17 @@ void new_swimmer()
   c->symbol = SWIMMER_SYMBOL;
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
-  c->pokemonRoster = generateTrainerPokemon();
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
+
+  make_buddies(c);
 }
 
 void new_char_other()
 {
   pair_t pos;
   npc *c;
-
+   
   do {
     rand_pos(pos);
   } while (world.rival_dist[pos[dim_y]][pos[dim_x]] == INT_MAX ||
@@ -862,9 +864,10 @@ void new_char_other()
   c->defeated = 0;
   c->next_turn = 0;
   c->seq_num = world.char_seq_num++;
-  c->pokemonRoster = generateTrainerPokemon();
   heap_insert(&world.cur_map->turn, c);
   world.cur_map->cmap[pos[dim_y]][pos[dim_x]] = c;
+
+  make_buddies(c);
 }
 
 void place_characters()
@@ -891,7 +894,6 @@ void place_characters()
       new_char_other();
       break;
     }
-
     /* Game attempts to continue to place trainers until the probability *
      * roll fails, but if the map is full (or almost full), it's         *
      * impossible (or very difficult) to continue to add, so we abort if *
@@ -917,6 +919,8 @@ void init_pc()
   world.pc.next_turn = 0;
 
   heap_insert(&world.cur_map->turn, &world.pc);
+
+  io_choose_starter();  
 }
 
 void place_pc()
@@ -1144,6 +1148,12 @@ void game_loop()
     c->next_turn += move_cost[n ? n->ctype : char_pc]
                              [world.cur_map->map[d[dim_y]][d[dim_x]]];
 
+    if (p && (c->pos[dim_y] != d[dim_y] || c->pos[dim_x] != d[dim_x]) &&
+        (world.cur_map->map[d[dim_y]][d[dim_x]] == ter_grass) &&
+        (rand() % 100 < ENCOUNTER_PROB)) {
+      io_encounter_pokemon();
+    }
+
     c->pos[dim_y] = d[dim_y];
     c->pos[dim_x] = d[dim_x];
 
@@ -1168,8 +1178,6 @@ int main(int argc, char *argv[])
   //  int x, y;
   int i;
 
-  db_parse(false);
-  
   do_seed = 1;
   
   if (argc > 1) {
@@ -1208,11 +1216,11 @@ int main(int argc, char *argv[])
   printf("Using seed: %u\n", seed);
   srand(seed);
 
+  db_parse(false);
+  
   io_init_terminal();
   
   init_world();
-
-  chooseStarters();
 
   /* print_hiker_dist(); */
   

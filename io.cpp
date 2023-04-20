@@ -3,15 +3,12 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <string>
 
 #include "io.h"
 #include "character.h"
 #include "poke327.h"
-#include "pokemonGen.h"
-#include "db_parse.h"
+#include "pokemon.h"
 
-using namespace std;
 typedef struct io_message {
   /* Will print " --more-- " at end of line when another message follows. *
    * Leave 10 extra spaces for that.                                      */
@@ -383,15 +380,13 @@ void io_pokemon_center()
 void io_battle(character *aggressor, character *defender)
 {
   npc *n = (npc *) ((aggressor == &world.pc) ? defender : aggressor);
+  int i;
 
   io_display();
-  io_queue_message("Let's battle! I have %d pokemon!", (int) aggressor->pokemonRoster.size());
-  for(int i = 0; i < (int) aggressor->pokemonRoster.size(); i++) {
-    string name = aggressor->pokemonRoster[i].identifier;
-    string pokemonDesc = name + ", level:" + to_string(aggressor->pokemonRoster[i].level) +  ", stats: " + to_string( aggressor->pokemonRoster[i].baseStats[0].base_stat) + " " + 
-    to_string( aggressor->pokemonRoster[i].baseStats[0].base_stat) + " "+ to_string( aggressor->pokemonRoster[i].baseStats[1].base_stat) + " " + to_string( aggressor->pokemonRoster[i].baseStats[2].base_stat) + " "
-    + to_string( aggressor->pokemonRoster[i].baseStats[3].base_stat) + " " + to_string( aggressor->pokemonRoster[i].baseStats[4].base_stat) + " " + to_string( aggressor->pokemonRoster[i].baseStats[5].base_stat);
-    io_queue_message("%o: %s", i + 1, pokemonDesc.c_str());
+  mvprintw(0, 0, "My pokemon are: ");
+  printw("%s", n->buddy[0]->get_species());
+  for (i = 1; i < 6 && n->buddy[i]; i++) {
+    printw(", %s", n->buddy[i]->get_species());
   }
   refresh();
   getch();
@@ -507,84 +502,6 @@ void io_teleport_world(pair_t dest)
 
   new_map(1);
   io_teleport_pc(dest);
-}
-
-void io_encounter(pokemon_db poke) {
-  io_queue_message("A wild pokemon appeared!");
-  string name = poke.identifier;
-  string pokeI = name + ", level: " + to_string(poke.level);
-  io_queue_message(pokeI.c_str());
-  string stats = "stats: ";
-  for(int i = 0; i < (int) poke.baseStats.size(); i++) {
-    stats = stats + to_string(poke.baseStats[i].base_stat) + " ";
-  }
-  io_queue_message(stats.c_str());
-  string move = "moves: ";
-  for(int i = 0; i < (int)(poke.moveset.size()); i++){
-        move = move + to_string(poke.moveset[i].move_id) + " ";
-  }
-  io_queue_message(move.c_str());
-}
-
-int calcManhattenDis(){
-  int distance = abs(200 - world.cur_idx[dim_x]) + abs(200 - world.cur_idx[dim_y]); //manhatten distance
-  return distance;
-}
-
-int calcLevel() {
-  int manhattenDis = calcManhattenDis();
-  int minLevel;
-  int maxLevel;
-  if(manhattenDis <= 200){
-    minLevel = 1;
-    maxLevel = manhattenDis / 2;
-  } else {
-    minLevel = (manhattenDis - 200) / 2;
-    maxLevel = 100;
-  }
-  return (rand() % (maxLevel - minLevel)) + minLevel;
-}
-
-void chooseStarters() {
-  vector<pokemon_db> starters = addPokemonStarters();
-  pokemon_db starterPoke;
-  string name = starters[0].identifier;
-  string pokemonDesc = name + ", stats: " + to_string(starters[0].baseStats[0].base_stat) + " " + 
-    to_string(starters[0].baseStats[0].base_stat) + " "+ to_string(starters[0].baseStats[1].base_stat) + " " + to_string(starters[0].baseStats[2].base_stat) + " "
-    + to_string(starters[0].baseStats[3].base_stat) + " " + to_string(starters[0].baseStats[4].base_stat) + " " + to_string(starters[0].baseStats[5].base_stat);
-  mvprintw(0, 0, "Enter the number corresponding to the starter pokemon you would like to select (1, 2, 3)");
-  mvprintw(1, 0, "1: %s", pokemonDesc.c_str());
-
-  name = starters[1].identifier;
-  pokemonDesc = name + ", stats: " + to_string(starters[1].baseStats[0].base_stat) + " " + 
-    to_string(starters[1].baseStats[0].base_stat) + " "+ to_string(starters[1].baseStats[1].base_stat) + " " + to_string(starters[1].baseStats[2].base_stat) + " "
-    + to_string(starters[1].baseStats[3].base_stat) + " " + to_string(starters[1].baseStats[4].base_stat) + " " + to_string(starters[1].baseStats[5].base_stat);
-  mvprintw(2, 0, "2: %s", pokemonDesc.c_str());
-
-  name = starters[2].identifier;
-  pokemonDesc = name + ", stats: " + to_string(starters[2].baseStats[0].base_stat) + " " + 
-    to_string(starters[2].baseStats[0].base_stat) + " "+ to_string(starters[2].baseStats[1].base_stat) + " " + to_string(starters[2].baseStats[2].base_stat) + " "
-    + to_string(starters[2].baseStats[3].base_stat) + " " + to_string(starters[2].baseStats[4].base_stat) + " " + to_string(starters[2].baseStats[5].base_stat);
-  mvprintw(3, 0, "3: %s", pokemonDesc.c_str());
-  int input;
-  do {
-    refresh();
-    switch (input = getch()) {
-      case '1':
-        starterPoke = starters[0];
-        break;
-      case '2':
-        starterPoke = starters[1];
-        break;
-      case '3':
-        starterPoke = starters[2];
-        break;
-      default:
-        mvprintw(4, 0, "invalid key: %#o, only 1, 2, or 3 is valid", input);
-    }
-  }while(input != '1' && input != '2' && input != '3');
-  mvprintw(5, 0, "Welcome to pokemon!");
-  world.pc.pokemonRoster.push_back(starterPoke);
 }
 
 void io_handle_input(pair_t dest)
@@ -706,10 +623,59 @@ void io_handle_input(pair_t dest)
     }
     refresh();
   } while (turn_not_consumed);
-  bool encounter = (rand() % 7 == 0) ? true : false;
-  if(encounter && world.cur_map->map[world.pc.pos[dim_y]][world.pc.pos[dim_x]] == ter_grass) {
-    pokemon_db newPokemon = addPokemonEncounter(calcLevel());
-    newPokemon = levelUp(newPokemon, newPokemon.level);
-    io_encounter(newPokemon);
-  }
+}
+
+void io_encounter_pokemon()
+{
+  pokemon *p;
+
+  p = new pokemon();
+
+  io_queue_message("%s%s%s: HP:%d ATK:%d DEF:%d SPATK:%d SPDEF:%d SPEED:%d %s",
+                   p->is_shiny() ? "*" : "", p->get_species(),
+                   p->is_shiny() ? "*" : "", p->get_hp(), p->get_atk(),
+                   p->get_def(), p->get_spatk(), p->get_spdef(),
+                   p->get_speed(), p->get_gender_string());
+  io_queue_message("%s's moves: %s %s", p->get_species(),
+                   p->get_move(0), p->get_move(1));
+
+  // Later on, don't delete if captured
+  delete p;
+}
+
+void io_choose_starter()
+{
+  class pokemon *choice[3];
+  int i;
+  bool again = true;
+  
+  choice[0] = new class pokemon();
+  choice[1] = new class pokemon();
+  choice[2] = new class pokemon();
+
+  echo();
+  curs_set(1);
+  do {
+    mvprintw( 4, 20, "Before you are three Pokemon, each of");
+    mvprintw( 5, 20, "which wants absolutely nothing more");
+    mvprintw( 6, 20, "than to be your best buddy forever.");
+    mvprintw( 8, 20, "Unfortunately for them, you may only");
+    mvprintw( 9, 20, "pick one.  Choose wisely.");
+    mvprintw(11, 20, "   1) %s", choice[0]->get_species());
+    mvprintw(12, 20, "   2) %s", choice[1]->get_species());
+    mvprintw(13, 20, "   3) %s", choice[2]->get_species());
+    mvprintw(15, 20, "Enter 1, 2, or 3: ");
+
+    refresh();
+    i = getch();
+    
+    if (i == '1' || i == '2' || i == '3') {
+      world.pc.buddy[0] = choice[(i - '0') - 1];
+      delete choice[(i - '0') % 3];
+      delete choice[((i - '0') + 1) % 3];
+      again = false;
+    }
+  } while (again);
+  noecho();
+  curs_set(0);
 }

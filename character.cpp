@@ -3,6 +3,7 @@
 #include "character.h"
 #include "poke327.h"
 #include "io.h"
+#include "pokemon.h"
 
 /* Just to make the following table fit in 80 columns */
 #define IM INT_MAX
@@ -397,6 +398,16 @@ int32_t cmp_char_turns(const void *key, const void *with)
 
 void delete_character(void *v)
 {
+  class pokemon **buddy;
+  int i;
+
+  buddy = ((character *) v)->buddy;
+  for (i = 0; i < 6; i++) {
+    if (buddy[i]) {
+      delete buddy[i];
+    }
+  }
+  
   if (v != &world.pc) {
     delete (character *) v;
   }

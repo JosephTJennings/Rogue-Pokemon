@@ -1,324 +1,172 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <vector>
-#include <fstream>
-#include <sstream>
-#include <limits.h>
-#include <iostream>
+#include <cstdlib>
+#include <algorithm>
 
 #include "pokemon.h"
+#include "db_parse.h"
+#include "poke327.h"
 
+static bool operator<(const levelup_move &f, const levelup_move &s)
+{
+  return ((f.level < s.level) || ((f.level == s.level) && f.move < s.move));
+}
 
-//using std::string;
-//using std::vector;
-using namespace std;
+static int pkmn_lvl()
+{
+    int md = (abs(world.cur_idx[dim_x] - (WORLD_SIZE / 2)) +
+            abs(world.cur_idx[dim_y] - (WORLD_SIZE / 2)));
+  int minl, maxl;
 
-static vector<pokemon> getPokemonCSV(string filePath) {
-    vector<pokemon> pokeList;
-    vector<string> row;
-    fstream file;
-    string line, element;
-    cout << "Pokemon function reached! \n";
-    file.open(filePath + "pokemon.csv", ios::in);
+  if (md <= 200) {
+    minl = 1;
+    maxl = md / 2;
+  } else {
+    minl = (md - 200) / 2;
+    maxl = 100;
+  }
+  if (minl < 1) {
+    minl = 1;
+  }
+  if (minl > 100) {
+    minl = 100;
+  }
+  if (maxl < 1) {
+    maxl = 1;
+  }
+  if (maxl > 100) {
+    maxl = 100;
+  }
 
-    getline(file, line);
-    while(getline(file, line)) {
-        row.clear();
-        stringstream ss(line);
-        cout << line << "\n";
-        while(getline(ss, element, ',')) {
-            if(element == "") element = to_string(INT_MAX);
-            row.push_back(element);
+  return (rand() % (maxl - minl + 1)) + minl;
+}
+
+pokemon::pokemon() : pokemon(pkmn_lvl()) {}
+
+pokemon::pokemon(int level) : level(level)
+{
+  pokemon_species_db *s;
+  unsigned i, j;
+  bool found;
+
+  // Subtract 1 because array is 1-indexed
+  pokemon_species_index = rand() % ((sizeof (species) /
+                                     sizeof (species[0])) - 1);
+  s = species + pokemon_species_index;
+  
+  if (!s->levelup_moves.size()) {
+    // We have never generated a pokemon of this species before, so we
+    // need to find it's level-up moveset and save it for next time.
+    for (i = 1; i < (sizeof (pokemon_moves) /
+                     sizeof (pokemon_moves[0])); i++) {
+      if (s->id == pokemon_moves[i].pokemon_id &&
+          pokemon_moves[i].pokemon_move_method_id == 1) {
+        for (found = false, j = 0; !found && j < s->levelup_moves.size(); j++) {
+          if (s->levelup_moves[j].move == pokemon_moves[i].move_id) {
+            found = true;
+          }
         }
-        if(row.size() != 6) row.push_back(to_string(INT_MAX));
-        pokemon tmp;
-        tmp.id = stoi(row[0]);
-        tmp.identifier = row[1];
-        tmp.species_id = stoi(row[2]);
-        tmp.height = stoi(row[3]);
-        tmp.weight = stoi(row[4]);
-        tmp.base_experience = stoi(row[5]);
-        tmp.order_is_default = stoi(row[6]);
-        pokeList.push_back(tmp);
-    }
-    return pokeList;
-}
-
-static vector<pokemon_moves> getPokemonMoves(string filePath) {
-    vector<pokemon_moves> moveList;
-    vector<string> row;
-    fstream file;
-    string line, element;
-
-    file.open(filePath + "pokemon_moves.csv", ios::in);
-
-    getline(file, line);
-    while(getline(file, line)) {
-        row.clear();
-        stringstream ss(line);
-        cout << line << "\n";
-        while(getline(ss, element, ',')) {
-            if(element == "") element = to_string(INT_MAX);
-            row.push_back(element);
+        if (!found) {
+          s->levelup_moves.push_back({ pokemon_moves[i].level,
+                                       pokemon_moves[i].move_id });
         }
-        if(row.size() != 6) row.push_back(to_string(INT_MAX));
-        pokemon_moves tmp;
-        //pokemon_id,version_group_id,move_id,pokemon_move_method_id,level,order
-        tmp.pokemon_id = stoi(row[0]);
-        tmp.version_group_id = stoi(row[1]);
-        tmp.pokemon_move_method_id = stoi(row[2]);
-        tmp.level = stoi(row[3]);
-        tmp.order = stoi(row[4]);
-        moveList.push_back(tmp);
-    }
-    return moveList;
-}
-
-static vector<pokemon_species> getPokemonSpecies(string filePath) {
-    vector<pokemon_species> pokeList;
-    vector<string> row;
-    fstream file;
-    string line, element;
-
-    file.open(filePath + "pokemon_species.csv", ios::in);
-
-    getline(file, line);
-    while(getline(file, line)) {
-        row.clear();
-        stringstream ss(line);
-        cout << line << "\n";
-        while(getline(ss, element, ',')) {
-            if(element.empty()) element = to_string(INT_MAX);
-            row.push_back(element);
-        }
-        if(row.size() != 20) row.push_back(to_string(INT_MAX));
-
-        //id,identifier,generation_id,evolves_from_species_id,evolution_chain_id,color_id,shape_id,habitat_id,gender_rate,capture_rate,
-        //base_happiness,is_baby,hatch_counter,has_gender_differences,growth_rate_id,forms_switchable,is_legendary,is_mythical,order,conquest_order
-        pokemon_species tmp;
-        tmp.id = stoi(row[0]);
-        tmp.identifier = row[1];
-        tmp.generation_id = stoi(row[2]);
-        tmp.evolves_from_species_id = stoi(row[3]);
-        tmp.evolution_chain_id = stoi(row[4]);
-        tmp.color_id = stoi(row[5]);
-        tmp.shape_id = stoi(row[6]);
-        tmp.habitat_id = stoi(row[7]);
-        tmp.gender_rate = stoi(row[8]);
-        tmp.capture_rate = stoi(row[9]);
-        tmp.base_happiness = stoi(row[10]);
-        tmp.is_baby = stoi(row[11]);
-        tmp.hatch_counter = stoi(row[12]);
-        tmp.has_gender_differences = stoi(row[13]);
-        tmp.growth_rate_id = stoi(row[14]);
-        tmp.forms_switchable = stoi(row[15]);
-        tmp.is_legendary = stoi(row[16]);
-        tmp.is_mythical = stoi(row[17]);
-        tmp.order = stoi(row[18]);
-        tmp.conquest_order = stoi(row[19]);
-        pokeList.push_back(tmp);
-    }
-    return pokeList;
-}
-
-static vector<pokemon_stats> getPokemonStats(string filePath) {
-    vector<pokemon_stats> moveList;
-    vector<string> row;
-    fstream file;
-    string line, element;
-
-    file.open(filePath + "pokemon_stats.csv", ios::in);
-
-    getline(file, line);
-    while(getline(file, line)) {
-        row.clear();
-        stringstream ss(line);
-        cout << line << "\n";
-        while(getline(ss, element, ',')) {
-            if(element == "") element = to_string(INT_MAX);
-            row.push_back(element);
-        }
-        if(row.size() != 4) row.push_back(to_string(INT_MAX));
-        pokemon_stats tmp;
-        //pokemon_id,stat_id,base_stat,effort
-        tmp.pokemon_id = stoi(row[0]);
-        tmp.stat_id = stoi(row[1]);
-        tmp.base_stat = stoi(row[2]);
-        tmp.effort = stoi(row[3]);
-        moveList.push_back(tmp);
-    }
-    return moveList;
-}
-
-static vector<pokemon_types> getPokemonTypes(string filePath) {
-    vector<pokemon_types> moveList;
-    vector<string> row;
-    fstream file;
-    string line, element;
-
-    file.open(filePath + "pokemon_types.csv", ios::in);
-
-    getline(file, line);
-    while(getline(file, line)) {
-        row.clear();
-        stringstream ss(line);
-        cout << line << "\n";
-        while(getline(ss, element, ',')) {
-            if(element == "") element = to_string(INT_MAX);
-            row.push_back(element);
-        }
-        if(row.size() != 3) row.push_back(to_string(INT_MAX));
-        pokemon_types tmp;
-        //pokemon_id,stat_id,base_stat,effort
-        tmp.pokemon_id = stoi(row[0]);
-        tmp.type_id = stoi(row[1]);
-        tmp.slot = stoi(row[2]);
-        moveList.push_back(tmp);
-    }
-    return moveList;
-}
-
-static vector<moves> getMoves(string filePath) {
-    vector<moves> pokeList;
-    vector<string> row;
-    fstream file;
-    string line, element;
-
-    file.open(filePath + "moves.csv", ios::in);
-
-    getline(file, line);
-    while(getline(file, line)) {
-        row.clear();
-        stringstream ss(line);
-        cout << line << "\n";
-        while(getline(ss, element, ',')) {
-            if(element.empty()) element = to_string(INT_MAX);
-            row.push_back(element);
-        }
-        if(row.size() != 15) row.push_back(to_string(INT_MAX));
-
-        moves tmp;
-        tmp.id = stoi(row[0]);
-        tmp.identifier = row[1];
-        tmp.generation_id = stoi(row[2]);
-        tmp.type_id = stoi(row[3]);
-        tmp.power = stoi(row[4]);
-        tmp.pp = stoi(row[5]);
-        tmp.accuracy = stoi(row[6]);
-        tmp.priority = stoi(row[7]);
-        tmp.target_id = stoi(row[8]);
-        tmp.damage_class_id = stoi(row[9]);
-        tmp.effect_id = stoi(row[10]);
-        tmp.effect_chance = stoi(row[11]);
-        tmp.contest_type_id = stoi(row[12]);
-        tmp.contest_effect_id = stoi(row[13]);
-        tmp.super_contest_effect_id = stoi(row[14]);
-        pokeList.push_back(tmp);
-    }
-    return pokeList;
-}
-
-static vector<experience> getExperience(string filePath) {
-    vector<experience> moveList;
-    vector<string> row;
-    fstream file;
-    string line, element;
-
-    file.open(filePath + "experience.csv", ios::in);
-
-    getline(file, line);
-    while(getline(file, line)) {
-        row.clear();
-        stringstream ss(line);
-        cout << line << "\n";
-        while(getline(ss, element, ',')) {
-            if(element == "") element = to_string(INT_MAX);
-            row.push_back(element);
-        }
-        if(row.size() != 3) row.push_back(to_string(INT_MAX));
-        experience tmp;
-        tmp.growth_rate_id = stoi(row[0]);
-        tmp.level = stoi(row[1]);
-        tmp.experience = stoi(row[2]);
-        moveList.push_back(tmp);
-    }
-    return moveList;
-}
-
-static vector<type_names> getTypeNames(string filePath) {
-    vector<type_names> moveList;
-    vector<string> row;
-    fstream file;
-    string line, element;
-
-    file.open(filePath + "type_names.csv", ios::in);
-
-    getline(file, line);
-    while(getline(file, line)) {
-        row.clear();
-        stringstream ss(line);
-        while(getline(ss, element, ',')) {
-            if(element == "") element = to_string(INT_MAX);
-            row.push_back(element);
-        }
-        if(row.size() != 3) row.push_back(to_string(INT_MAX));
-        if(stoi(row[1]) != 9) continue;
-        type_names tmp;
-        tmp.type_id = stoi(row[0]);
-        tmp.local_language_id = stoi(row[1]);
-        tmp.name = row[2];
-        moveList.push_back(tmp);
-    }
-    for(long unsigned i = 0; i < moveList.size(); i++) {
-        type_names typeN = moveList[i];
-        cout << typeN.type_id << "," << typeN.local_language_id << "," << typeN.name << "\n";
+      }
     }
 
-    return moveList;
-}
+    // s->levelup_moves now contains all of the moves this species can learn
+    // through leveling up.  Now we'll sort it by level to make that process
+    // simpler.
+    sort(s->levelup_moves.begin(), s->levelup_moves.end());
 
-static vector<stats> getStats(string filePath) {
-    vector<stats> moveList;
-    vector<string> row;
-    fstream file;
-    string line, element;
+    // Also initialize base stats while we're here
+    s->base_stat[0] = pokemon_stats[pokemon_species_index * 6 - 5].base_stat;
+    s->base_stat[1] = pokemon_stats[pokemon_species_index * 6 - 4].base_stat;
+    s->base_stat[2] = pokemon_stats[pokemon_species_index * 6 - 3].base_stat;
+    s->base_stat[3] = pokemon_stats[pokemon_species_index * 6 - 2].base_stat;
+    s->base_stat[4] = pokemon_stats[pokemon_species_index * 6 - 1].base_stat;
+    s->base_stat[5] = pokemon_stats[pokemon_species_index * 6 - 0].base_stat;
+  }
 
-    file.open(filePath + "experience.csv", ios::in);
+  // Get pokemon's move(s).
+  for (i = 0;
+       i < s->levelup_moves.size() && s->levelup_moves[i].level <= level;
+       i++)
+    ;
 
-    getline(file, line);
-    while(getline(file, line)) {
-        row.clear();
-        stringstream ss(line);
-        cout << line << "\n";
-        while(getline(ss, element, ',')) {
-            if(element == "") element = to_string(INT_MAX);
-            row.push_back(element);
-        }
-        if(row.size() != 4) row.push_back(to_string(INT_MAX));
-        stats tmp;
-        tmp.damage_class_id = stoi(row[0]);
-        tmp.identifier = row[1];
-        tmp.is_battle_only = stoi(row[2]);
-        tmp.game_index = stoi(row[3]);
-        moveList.push_back(tmp);
+  // 0 is an invalid index, since the array is 1 indexed.
+  move_index[0] = move_index[1] = move_index[2] = move_index[3] = 0;
+  // I don't think 0 moves is possible, but account for it to be safe
+  if (i) {
+    move_index[0] = s->levelup_moves[rand() % i].move;
+    if (i != 1) {
+      do {
+        j = rand() % i;
+      } while (s->levelup_moves[j].move == move_index[0]);
+      move_index[1] = s->levelup_moves[j].move;
     }
-    return moveList;
+  }
+
+  // Calculate IVs
+  for (i = 0; i < 6; i++) {
+    IV[i] = rand() & 0xf;
+    effective_stat[i] = 5 + ((s->base_stat[i] + IV[i]) * 2 * level) / 100;
+    if (i == 0) { // HP
+      effective_stat[i] += 5 + level;
+    }
+  }
+
+  shiny = (((rand() & 0x1fff) == 0x1fff) ? true : false);
+  gender = ((rand() & 0x1) ? gender_female : gender_male);
 }
 
-/**
-int main(int argc, char *argv[]){
-    string filePath = "";
-    vector<pokemon> pokemonList = getPokemonCSV(filePath);
-    cout << pokemonList.size() << "\n";
-    vector<pokemon_moves> pokemonMoves = getPokemonMoves(filePath);
-    cout << pokemonMoves.size() << " " << pokemonMoves[pokemonMoves.size() / 2].pokemon_id << "\n";
-    vector<pokemon_species> pokemonSpecies = getPokemonSpecies(filePath);
-    cout << pokemonSpecies.size() << " " << pokemonSpecies[pokemonSpecies.size() / 2].identifier << "\n";
-    vector<pokemon_stats> pokemonStats = getPokemonStats(filePath);
-    cout << pokemonStats.size() << " " << pokemonStats[pokemonStats.size() / 2].pokemon_id << "\n";
-    vector<pokemon_types> pokemonTypes = getPokemonTypes(filePath);
-    cout << pokemonTypes.size() << " " << pokemonTypes[pokemonTypes.size() / 2].pokemon_id << "\n";
+const char *pokemon::get_species() const
+{
+  return species[pokemon_species_index].identifier;
 }
 
-**/
+int pokemon::get_hp() const
+{
+  return effective_stat[stat_hp];
+}
+
+int pokemon::get_atk() const
+{
+  return effective_stat[stat_atk];
+}
+
+int pokemon::get_def() const
+{
+  return effective_stat[stat_def];
+}
+
+int pokemon::get_spatk() const
+{
+  return effective_stat[stat_spatk];
+}
+
+int pokemon::get_spdef() const
+{
+  return effective_stat[stat_spdef];
+}
+
+int pokemon::get_speed() const
+{
+  return effective_stat[stat_speed];
+}
+
+const char *pokemon::get_gender_string() const
+{
+  return gender == gender_female ? "female" : "male";
+}
+
+bool pokemon::is_shiny() const
+{
+  return shiny;
+}
+
+const char *pokemon::get_move(int i) const
+{
+  if (i < 4 && move_index[i]) {
+    return moves[move_index[i]].identifier;
+  } else {
+    return "";
+  }
+}
