@@ -183,12 +183,11 @@ int pokemon::get_dam(int moveIndex) {
   power = moves[move_index[moveIndex]].power;
   if(power < 1) power = 1;
   if(rand() / 266 < effective_stat[stat_speed] / 2) crit = 1.5;
-  damage = (double)((double)(((double)(((2 * level) / 5) + 2) * power * ((double)(effective_stat[stat_atk] / effective_stat[stat_def])) ) / 50) + 2) * crit * (double)((rand() / 16) + 85) * stab * type;
+  damage = (( ((((2 * level) / 5) + 2) * power * (effective_stat[stat_atk] / effective_stat[stat_def])) / 50) + 2)
+      * crit * ((rand() / 16)) * stab * type;
   if(damage < 1) damage = 1;
   return (int) damage;
 }
 int pokemon::get_acc(int moveIndex) {
-  int acc = moves[move_index[moveIndex]].accuracy;
-  if(rand() % 100 < acc) return 1;
-  return 0;
+  return moves[move_index[moveIndex]].accuracy;
 }
