@@ -4,6 +4,7 @@
 # include <stdint.h>
 
 # include "pair.h"
+# include<string>
 
 typedef enum __attribute__ ((__packed__)) movement_type {
   move_hiker,
@@ -50,6 +51,7 @@ class npc : public character {
 
 class pc : public character {
  public:
+ std::vector<std::string> items;
 };
 
 int32_t cmp_char_turns(const void *key, const void *with);
